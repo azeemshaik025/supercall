@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { type CSSProperties, useMemo, useState } from 'react'
 import { HOUR } from '@/lib/candles'
 import { marketCandles, markets, me } from '@/lib/data'
 import { pct, price, usd } from '@/lib/format'
@@ -12,6 +12,14 @@ import { cx, Info, Segmented, TokenIcon } from './ui'
 
 const TIMEFRAMES = ['15m', '1h', '4h', '1d'] as const
 const EXPIRIES = ['4h', '24h', '3d', '7d'] as const
+/** Entry zone in percent, 0.10 to 2.00, in 0.05 steps; pulls onto round values when close. */
+const ZONE_MIN = 0.1
+const ZONE_MAX = 2
+const MAGNETS = [0.25, 0.5, 0.75, 1, 1.5, 2]
+const snapZone = (v: number) =>
+  MAGNETS.find((m) => Math.abs(m - v) <= 0.04) ??
+  Math.min(ZONE_MAX, Math.max(ZONE_MIN, Math.round(v / 0.05) * 0.05))
+
 const TF_MS = { '15m': HOUR / 4, '1h': HOUR, '4h': HOUR * 4, '1d': HOUR * 24 } as const
 
 function defaults(p: number, long: boolean) {
@@ -174,7 +182,7 @@ export function Composer() {
               {[
                 ['Call', `${long ? 'Long' : 'Short'} ${asset}/USDC`],
                 ['Target', price(levels.target)],
-                ['Entry', `${price(levels.entry)} ± ${band}%`],
+                ['Entry', `${price(levels.entry)} ± ${band.toFixed(2)}%`],
                 ['Stop', price(levels.stop)],
                 ['Expires in', expiry],
                 ['Boost', boost ? `${boost}% of your cut` : 'None'],
@@ -265,8 +273,8 @@ export function Composer() {
               )}
             </div>
 
-            <label className="flex flex-col gap-2">
-              <span className="flex justify-between text-[12px]">
+            <div className="flex flex-col gap-2.5">
+              <span className="flex items-baseline justify-between text-[12px]">
                 <span className="flex items-center gap-1.5 text-muted">
                   Entry zone{' '}
                   <Info
@@ -274,21 +282,29 @@ export function Composer() {
                     text="Followers can copy while price is inside this zone around your entry."
                   />
                 </span>
-                <span>
-                  ±{band}% · {price(levels.entry * (1 - band / 100))} to{' '}
-                  {price(levels.entry * (1 + band / 100))}
-                </span>
+                <span className="text-[13px] tabular-nums">±{band.toFixed(2)}%</span>
               </span>
               <input
                 type="range"
-                min={0.1}
-                max={2}
-                step={0.1}
+                min={ZONE_MIN}
+                max={ZONE_MAX}
+                step={0.01}
                 value={band}
-                onChange={(e) => setBand(Number(e.target.value))}
-                className="accent-steel"
+                onChange={(e) => setBand(snapZone(Number(e.target.value)))}
+                aria-label="Entry zone"
+                className="range"
+                style={
+                  {
+                    '--fill': `${((band - ZONE_MIN) / (ZONE_MAX - ZONE_MIN)) * 100}%`,
+                  } as CSSProperties
+                }
               />
-            </label>
+              <span className="flex justify-between text-[11px] text-faint tabular-nums">
+                <span>{price(levels.entry * (1 - band / 100))}</span>
+                <span>copying open between</span>
+                <span>{price(levels.entry * (1 + band / 100))}</span>
+              </span>
+            </div>
 
             <div className="flex flex-col gap-2">
               <span className="text-[12px] text-muted">Expires in</span>
@@ -343,7 +359,9 @@ export function Composer() {
                 value={boost}
                 disabled={!canBoost}
                 onChange={(e) => setBoost(Number(e.target.value))}
-                className="accent-steel"
+                aria-label="Boost"
+                className="range"
+                style={{ '--fill': `${(boost / 50) * 100}%` } as CSSProperties}
               />
             </label>
 

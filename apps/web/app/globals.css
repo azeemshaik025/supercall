@@ -171,3 +171,38 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Range slider: steel fill up to the thumb, square thumb. */
+.range {
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--sc-steel) 15%, transparent),
+    var(--sc-steel) var(--fill, 50%),
+    var(--sc-surface-3) var(--fill, 50%)
+  );
+  outline: none;
+}
+.range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--sc-ink);
+  border: 3px solid var(--sc-steel);
+  box-shadow: 0 0 16px 4px var(--sc-glow);
+}
+.range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 0;
+  background: var(--sc-ink);
+  border: 3px solid var(--sc-steel);
+  box-shadow: 0 0 16px 4px var(--sc-glow);
+}
+.range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
