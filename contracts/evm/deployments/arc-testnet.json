@@ -1,0 +1,31 @@
+{
+  "network": "Arc Testnet",
+  "chainId": 5042002,
+  "contract": "Hisaab",
+  "address": "0x0c9c8EddEA11FF8edc314dDFB3923f388Da543C9",
+  "deployTx": "0xc11aa51ca2a60e34e881a599ec02326dbb5884ef098cd1a4c5f2723bbd51cd8a",
+  "deployedAt": "2026-11-05T19:49:36.648Z",
+  "create2Factory": "0xe581d2bfab9588af0c198a407daa606cfd46b5aa",
+  "constructor": {
+    "usdc": "0x3600000000000000000000000000000000000000",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "owner": "0x2e62915d195e790701a0fb4ef0c9bfa0e84bbb54",
+    "writer": "0x2e62915d195e790701a0fb4ef0c9bfa0e84bbb54",
+    "settler": "0x2e62915d195e790701a0fb4ef0c9bfa0e84bbb54",
+    "treasury": "0x2e62915d195e790701a0fb4ef0c9bfa0e84bbb54"
+  },
+  "liveProof": {
+    "call": "0xff1f6a1282303f96e2c0e220eb193bdd8a541faab24d1d27fd494bd68cc586c2",
+    "follower": "0x8273b0b3599e57da37b5a22ef22499b96ccd3eb5",
+    "payFeeTx": "0xe3f2374c4b45d69b5ef3d40d80b1de928b7873bf72dbd396ccc6d38eb99e55f7",
+    "payFeeCopySize": "1000000000",
+    "payFeeUsdcPulled": "7000000",
+    "settleTx": "0xccc51202f5fa5de756c208fcc822ee659e07ef8607520013aeacd80545d38d9b",
+    "settleEnding": "Right",
+    "settleKeptFee": "6000000",
+    "settleCutBps": 5010,
+    "settlePaidToPayoutWallet": "3006000",
+    "settlePaidToTreasury": "1000000",
+    "settleEarnedFundGain": "2994000"
+  }
+}
