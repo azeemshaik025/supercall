@@ -1,14 +1,51 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.6.5/schema.json",
-  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "files": {
-    "includes": ["**", "!contracts/evm/lib", "!docs", "!arkiv"]
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
   },
-  "formatter": { "indentStyle": "space", "lineWidth": 100 },
-  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },
+  "files": {
+    "includes": [
+      "**",
+      "!contracts/evm/lib",
+      "!docs",
+      "!arkiv",
+      "!**/public",
+      "!**/.next",
+      "!**/next-env.d.ts"
+    ]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded"
+    }
+  },
   "linter": {
     "rules": {
       "preset": "recommended"
     }
-  }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noImgElement": "off"
+          }
+        }
+      }
+    }
+  ]
 }
