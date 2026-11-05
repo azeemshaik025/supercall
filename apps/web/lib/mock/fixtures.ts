@@ -254,8 +254,53 @@ export const calls: Call[] = [
     filledAt: '2026-11-04T16:05:00Z',
     fillPrice: 64_020,
   },
-  { id: 'c12', asset: 'VIRTUAL', long: true, caller: 'rakesh', entry: 1.88, stop: 1.79, target: 2.12, price: 1.912, band: 0.02, status: 'live', createdAt: '2026-11-05T22:00:00Z', expiresAt: '2026-11-08T22:00:00Z', copiedUsd: 4_200, copiers: 9, opposedUsd: 600, supercall: true, boosted: false, thesis: 'Holding the 1.85 shelf after the agent launch.', arkivKey: '0xd41e…77b0', filledAt: '2026-11-05T22:09:00Z', fillPrice: 1.881 },
-  { id: 'c13', asset: 'DEGEN', long: true, caller: 'rakesh', entry: 0.0072, stop: 0.0068, target: 0.008, price: 0.0081, band: 0.01, status: 'won', createdAt: '2026-11-01T09:00:00Z', expiresAt: '2026-11-04T09:00:00Z', copiedUsd: 900, copiers: 4, opposedUsd: 0, supercall: false, boosted: false, thesis: 'Base breakout with volume.', arkivKey: '0x19ac…e502', filledAt: '2026-11-01T09:03:00Z', fillPrice: 0.0072, result: 0.111 },
+  {
+    id: 'c12',
+    asset: 'VIRTUAL',
+    long: true,
+    caller: 'rakesh',
+    entry: 1.88,
+    stop: 1.79,
+    target: 2.12,
+    price: 1.912,
+    band: 0.02,
+    status: 'live',
+    createdAt: '2026-11-05T22:00:00Z',
+    expiresAt: '2026-11-08T22:00:00Z',
+    copiedUsd: 4_200,
+    copiers: 9,
+    opposedUsd: 600,
+    supercall: true,
+    boosted: false,
+    thesis: 'Holding the 1.85 shelf after the agent launch.',
+    arkivKey: '0xd41e…77b0',
+    filledAt: '2026-11-05T22:09:00Z',
+    fillPrice: 1.881,
+  },
+  {
+    id: 'c13',
+    asset: 'DEGEN',
+    long: true,
+    caller: 'rakesh',
+    entry: 0.0072,
+    stop: 0.0068,
+    target: 0.008,
+    price: 0.0081,
+    band: 0.01,
+    status: 'won',
+    createdAt: '2026-11-01T09:00:00Z',
+    expiresAt: '2026-11-04T09:00:00Z',
+    copiedUsd: 900,
+    copiers: 4,
+    opposedUsd: 0,
+    supercall: false,
+    boosted: false,
+    thesis: 'Base breakout with volume.',
+    arkivKey: '0x19ac…e502',
+    filledAt: '2026-11-01T09:03:00Z',
+    fillPrice: 0.0072,
+    result: 0.111,
+  },
 ]
 
 const lt = (s: string) => s.split('').map((c) => (c === '1' ? 'W' : 'L')) as Caller['lastTen']
@@ -441,9 +486,9 @@ export const copiers: Copier[] = [
 ]
 
 export const positions: Position[] = [
-  { id: 'p1', callId: 'c1', sizeUsd: 1_000, boughtAt: 3004.2 },
-  { id: 'p2', callId: 'c2', sizeUsd: 1_500, boughtAt: 1.245 },
-  { id: 'p3', callId: 'c11', sizeUsd: 920, boughtAt: 64_100 },
+  { id: 'p1', callId: 'c1', sizeUsd: 1_000, boughtAt: 3012.4, at: '2026-11-05T16:00:00Z' },
+  { id: 'p2', callId: 'c2', sizeUsd: 1_500, boughtAt: 1.245, at: '2026-11-05T20:00:00Z' },
+  { id: 'p3', callId: 'c11', sizeUsd: 920, boughtAt: 64_100, at: '2026-11-04T17:00:00Z' },
 ]
 
 export const settled: Settled[] = [

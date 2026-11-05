@@ -1,50 +1,44 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { candlesFor, NOW } from '@/lib/data'
+import { useMemo } from 'react'
+import { candlesFor, marksFor } from '@/lib/data'
+import { usd } from '@/lib/format'
+import { estimate } from '@/lib/money'
 import type { Call } from '@/lib/types'
-import { CandleChart, type Level } from './candle-chart'
-import { Segmented } from './ui'
+import { CandleChart } from './candle-chart'
 
-const RANGES = ['1H', '1D', '3D', 'All'] as const
-const COUNT = { '1H': 20, '1D': 40, '3D': 72, All: 96 } as const
+const SIZE = 1000
 
 export function CallChart({ call }: { call: Call }) {
-  const [range, setRange] = useState<(typeof RANGES)[number]>('1D')
-  const candles = useMemo(() => candlesFor(call, COUNT[range]), [call, range])
-  const levels = useMemo<Level[]>(
-    () => [
-      { value: call.target, color: '--sc-good', dashed: true },
-      { value: call.entry, color: '--sc-entry', dashed: true },
-      { value: call.stop, color: '--sc-bad', dashed: true },
-    ],
+  const candles = useMemo(() => candlesFor(call), [call])
+  const levels = useMemo(
+    () => ({ target: call.target, entry: call.entry, stop: call.stop }),
     [call],
   )
+  const when = useMemo(
+    () => ({ createdAt: call.createdAt, filledAt: call.filledAt, fillPrice: call.fillPrice }),
+    [call],
+  )
+  const pnl = useMemo(() => {
+    const e = estimate(call, SIZE)
+    return { target: `+${usd(e.atTarget)}`, stop: `−${usd(Math.abs(e.atStop))}` }
+  }, [call])
+  const marks = useMemo(() => marksFor(call.id), [call.id])
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex gap-4 text-[12px] text-muted">
-          <span className="flex items-center gap-1.5">
-            <span className="h-px w-3.5 border-t border-dashed border-good" />
-            Target
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-px w-3.5 border-t border-dashed border-entry" />
-            Entry
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-px w-3.5 border-t border-dashed border-bad" />
-            Stop
-          </span>
-        </span>
-        <Segmented label="Range" options={RANGES} value={range} onChange={setRange} />
-      </div>
+      <p className="text-[12px] text-muted">
+        Result on a {usd(SIZE)} copy, after fees and protection. Shaded: before the call was made.
+      </p>
       <CandleChart
         candles={candles}
         levels={levels}
-        height={340}
-        label={`Hourly ${call.asset} candles since the call`}
-        endAt={NOW.getTime()}
+        band={call.band}
+        call={when}
+        pnl={pnl}
+        marks={marks}
+        height={380}
+        precision={call.price < 1 ? 4 : 2}
+        label={`Hourly ${call.asset} candles with the call’s target, entry zone and stop`}
       />
     </div>
   )

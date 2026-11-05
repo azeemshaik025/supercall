@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { marketCandles, markets, me, NOW } from '@/lib/data'
+import { HOUR } from '@/lib/candles'
+import { marketCandles, markets, me } from '@/lib/data'
 import { pct, price, usd } from '@/lib/format'
 import { CALL_FEE, CREDIT_SHARE, callerCut } from '@/lib/money'
 import type { Asset } from '@/lib/types'
@@ -11,7 +12,7 @@ import { cx, Info, Segmented, TokenIcon } from './ui'
 
 const TIMEFRAMES = ['15m', '1h', '4h', '1d'] as const
 const EXPIRIES = ['4h', '24h', '3d', '7d'] as const
-const TF_MS = { '15m': 900_000, '1h': 3_600_000, '4h': 14_400_000, '1d': 86_400_000 } as const
+const TF_MS = { '15m': HOUR / 4, '1h': HOUR, '4h': HOUR * 4, '1d': HOUR * 24 } as const
 
 function defaults(p: number, long: boolean) {
   return long
@@ -44,15 +45,9 @@ export function Composer() {
     setLevels(defaults(m.price, l))
   }
 
-  const candles = useMemo(() => marketCandles(asset, 60), [asset])
-  const lines = useMemo<Level[]>(
-    () => [
-      { value: levels.target, color: '--sc-good' },
-      { value: levels.entry, color: '--sc-entry' },
-      { value: levels.stop, color: '--sc-bad' },
-    ],
-    [levels],
-  )
+  const candles = useMemo(() => marketCandles(asset, 60, TF_MS[tf]), [asset, tf])
+  const onLevel = (key: Level, value: number) =>
+    setLevels((v) => ({ ...v, [key]: +value.toPrecision(5) }))
 
   const reward = Math.abs(levels.target - levels.entry) / levels.entry
   const risk = Math.abs(levels.entry - levels.stop) / levels.entry
@@ -153,11 +148,12 @@ export function Composer() {
         <div className="p-5">
           <CandleChart
             candles={candles}
-            levels={lines}
+            levels={levels}
+            band={band / 100}
+            onLevel={onLevel}
             height={460}
-            label={`${asset} candles with your levels`}
-            hourMs={TF_MS[tf]}
-            endAt={NOW.getTime()}
+            precision={market.price < 1 ? 4 : 2}
+            label={`${asset} candles with your levels; drag a line to move it`}
           />
         </div>
       </section>

@@ -11,9 +11,17 @@ export default function MyCalls() {
   const open = mine.filter((c) => isOpen(c.status))
   const ended = mine.filter((c) => !isOpen(c.status))
   const stats = [
-    { k: 'SuperFactor', v: String(me.superFactor), sub: `${Math.round(callerCut(me.superFactor) * 100)}% cut of kept fees` },
+    {
+      k: 'SuperFactor',
+      v: String(me.superFactor),
+      sub: `${Math.round(callerCut(me.superFactor) * 100)}% cut of kept fees`,
+    },
     { k: 'Earned', v: usd(me.earnedUsd), sub: 'from calls that worked' },
-    { k: 'Copied', v: usdShort(mine.reduce((s, c) => s + c.copiedUsd, 0)), sub: `${mine.reduce((s, c) => s + c.copiers, 0)} followers` },
+    {
+      k: 'Copied',
+      v: usdShort(mine.reduce((s, c) => s + c.copiedUsd, 0)),
+      sub: `${mine.reduce((s, c) => s + c.copiers, 0)} followers`,
+    },
     { k: 'Your fund', v: usd(me.fundUsd), sub: 'pays credit when you are wrong' },
   ]
   return (
@@ -29,7 +37,10 @@ export default function MyCalls() {
       />
       <div className="surface-card grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))]">
         {stats.map((s, i) => (
-          <div key={s.k} className={`flex flex-col gap-1.5 p-[18px] ${i ? 'border-l border-line' : ''}`}>
+          <div
+            key={s.k}
+            className={`flex flex-col gap-1.5 p-[18px] ${i ? 'border-l border-line' : ''}`}
+          >
             <span className="text-[12px] text-muted">{s.k}</span>
             <span className="text-[22px] font-medium">{s.v}</span>
             <span className="text-[12px] text-muted">{s.sub}</span>

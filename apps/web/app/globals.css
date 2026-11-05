@@ -27,6 +27,7 @@
   --sc-bad-soft: rgb(255 69 102 / 0.12);
   --sc-warn-soft: rgb(253 181 41 / 0.12);
   --sc-glow: rgb(110 159 203 / 0.35);
+  --sc-pop: 12px 0 40px -12px rgb(0 0 0 / 0.7);
   --sc-white: #ffffff;
   --sc-hi: rgb(255 255 255 / 0.025);
   --sc-hi-0: rgb(255 255 255 / 0);
@@ -42,6 +43,7 @@
 }
 
 @theme inline {
+  --shadow-pop: var(--sc-pop);
   --color-bg: var(--sc-bg);
   --color-sidebar: var(--sc-sidebar);
   --color-surface: var(--sc-surface);

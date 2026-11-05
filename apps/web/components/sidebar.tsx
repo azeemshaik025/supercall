@@ -28,7 +28,12 @@ const groups: { title?: string; items: Item[] }[] = [
   {
     title: 'Calls',
     items: [
-      { href: '/compose', label: 'Publish a call', icon: 'publish', active: (p) => p === '/compose' },
+      {
+        href: '/compose',
+        label: 'Publish a call',
+        icon: 'publish',
+        active: (p) => p === '/compose',
+      },
       { href: '/my-calls', label: 'My calls', icon: 'my-calls', active: (p) => p === '/my-calls' },
     ],
   },
@@ -36,7 +41,12 @@ const groups: { title?: string; items: Item[] }[] = [
     title: 'Account',
     items: [
       { href: '/me', label: 'Portfolio', icon: 'portfolio', active: (p) => p === '/me' },
-      { href: `/u/${me.handle}`, label: 'Profile', icon: 'profile', active: (p) => p === `/u/${me.handle}` },
+      {
+        href: `/u/${me.handle}`,
+        label: 'Profile',
+        icon: 'profile',
+        active: (p) => p === `/u/${me.handle}`,
+      },
       { href: '/profile', label: 'Settings', icon: 'settings', active: (p) => p === '/profile' },
     ],
   },
@@ -45,7 +55,8 @@ const groups: { title?: string; items: Item[] }[] = [
 const RAIL = 64
 const FULL = 236
 /** Chart-first pages open with the sidebar folded so the chart gets the room. */
-const chartFirst = (p: string) => p.startsWith('/c/') || p === '/compose' || p.startsWith('/markets')
+const chartFirst = (p: string) =>
+  p.startsWith('/c/') || p === '/compose' || p.startsWith('/markets')
 
 export function Sidebar() {
   const path = usePathname()
@@ -56,7 +67,7 @@ export function Sidebar() {
 
   return (
     <div
-      className="sticky top-0 hidden h-screen shrink-0 transition-[width] duration-300 ease-out lg:block"
+      className="sticky top-0 hidden h-screen shrink-0 lg:block"
       style={{ width: isPinned ? FULL : RAIL }}
     >
       <aside
@@ -64,18 +75,25 @@ export function Sidebar() {
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         className={cx(
-          'absolute inset-y-0 left-0 z-40 flex flex-col overflow-hidden border-r border-line bg-sidebar transition-[width,box-shadow] duration-300 ease-out',
-          !isPinned && hover && 'shadow-[12px_0_40px_-12px_rgb(0_0_0/0.7)]',
+          'absolute inset-y-0 left-0 z-40 flex flex-col overflow-hidden border-r border-line bg-sidebar',
+          !isPinned && hover && 'shadow-pop',
         )}
         style={{ width: open ? FULL : RAIL }}
       >
         <div className="flex h-16 shrink-0 items-center border-b border-line px-4">
-          <Link href="/explore" aria-label="Supercall: explore calls" className="flex shrink-0 items-center gap-1">
+          <Link
+            href="/explore"
+            aria-label="Supercall: explore calls"
+            className="flex shrink-0 items-center gap-1"
+          >
             <img src="/brand/mark.svg" alt="" className="size-8" />
             <img
               src="/brand/wordmark.svg"
               alt=""
-              className={cx('h-8 w-auto transition-opacity duration-200', open ? 'opacity-100' : 'opacity-0')}
+              className={cx(
+                'h-8 w-auto transition-opacity duration-200',
+                open ? 'opacity-100' : 'opacity-0',
+              )}
             />
           </Link>
           <button
@@ -88,17 +106,26 @@ export function Sidebar() {
               open ? 'opacity-100' : 'pointer-events-none opacity-0',
             )}
           >
-            <Icon name="chevron-left" size={18} className={cx('transition-transform duration-300', !isPinned && 'rotate-180')} />
+            <Icon
+              name="chevron-left"
+              size={18}
+              className={cx('transition-transform duration-300', !isPinned && 'rotate-180')}
+            />
           </button>
         </div>
 
-        <nav className={cx('min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-4 transition-[padding] duration-300', open ? 'pt-1' : 'pt-4')}>
+        <nav
+          className={cx(
+            'min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-4',
+            open ? 'pt-1' : 'pt-4',
+          )}
+        >
           {groups.map((g) => (
             <div key={g.title ?? 'main'}>
               {g.title && (
                 <div
                   className={cx(
-                    'flex items-end overflow-hidden px-2.5 text-[12px] whitespace-nowrap text-faint transition-[height,padding,opacity] duration-300',
+                    'flex items-end overflow-hidden px-2.5 text-[12px] whitespace-nowrap text-faint transition-opacity duration-200',
                     open ? 'h-11 pb-2.5 opacity-100' : 'h-0 pb-0 opacity-0',
                   )}
                 >
@@ -119,7 +146,14 @@ export function Sidebar() {
                     )}
                   >
                     <Icon name={item.icon} />
-                    <span className={cx('transition-opacity duration-200', open ? 'opacity-100' : 'opacity-0')}>{item.label}</span>
+                    <span
+                      className={cx(
+                        'transition-opacity duration-200',
+                        open ? 'opacity-100' : 'opacity-0',
+                      )}
+                    >
+                      {item.label}
+                    </span>
                   </Link>
                 )
               })}
@@ -131,7 +165,12 @@ export function Sidebar() {
           <span className="grid size-8 shrink-0 place-items-center bg-surface-3 text-[13px] text-silver">
             {me.handle[0]?.toUpperCase()}
           </span>
-          <span className={cx('flex min-w-0 flex-col transition-opacity duration-200', open ? 'opacity-100' : 'opacity-0')}>
+          <span
+            className={cx(
+              'flex min-w-0 flex-col transition-opacity duration-200',
+              open ? 'opacity-100' : 'opacity-0',
+            )}
+          >
             <span className="text-[13px] font-medium">@{me.handle}</span>
             <span className="font-mono text-[12px] text-muted">{me.address}</span>
           </span>

@@ -22,15 +22,27 @@ export default function Portfolio() {
     <div className="space-y-6">
       <PageTitle title="Portfolio" sub="Calls you copied, open and settled." />
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3">
-        <div className="flex flex-col gap-1.5 border border-line-strong p-5 text-white" style={{ background: 'var(--sc-brand)' }}>
+        <div
+          className="flex flex-col gap-1.5 border border-line-strong p-5 text-white"
+          style={{ background: 'var(--sc-brand)' }}
+        >
           <span className="text-[12px] text-white/85">Open positions</span>
           <span className="text-[32px] font-medium tracking-[-0.03em]">{usd(openValue)}</span>
           <span className="text-[12px] text-white/90">{signedUsd(unrealised)} unrealised</span>
         </div>
         {[
-          { k: 'Realised', v: signedUsd(realised), sub: 'after fees', tone: realised >= 0 ? 'text-good' : 'text-bad' },
+          {
+            k: 'Realised',
+            v: signedUsd(realised),
+            sub: 'after fees',
+            tone: realised >= 0 ? 'text-good' : 'text-bad',
+          },
           { k: 'Paid back to you', v: '$6.95', sub: 'fee back + credit on wrong calls' },
-          { k: 'Calls copied', v: String(positions.length + settled.length), sub: `${right} right · ${settled.length - right} wrong` },
+          {
+            k: 'Calls copied',
+            v: String(positions.length + settled.length),
+            sub: `${right} right · ${settled.length - right} wrong`,
+          },
         ].map((s) => (
           <div key={s.k} className="surface-card flex flex-col gap-1.5 p-5">
             <span className="text-[12px] text-muted">{s.k}</span>
@@ -78,7 +90,14 @@ export default function Portfolio() {
                   <td className="py-3 text-right">{usd(p.sizeUsd)}</td>
                   <td className="py-3 text-right text-silver">{price(p.boughtAt)}</td>
                   <td className="py-3 text-right">{price(p.call.price)}</td>
-                  <td className={cx('py-3 text-right font-medium', p.pnl >= 0 ? 'text-good' : 'text-bad')}>{signedUsd(p.pnl)}</td>
+                  <td
+                    className={cx(
+                      'py-3 text-right font-medium',
+                      p.pnl >= 0 ? 'text-good' : 'text-bad',
+                    )}
+                  >
+                    {signedUsd(p.pnl)}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <CloseButton />
                   </td>
@@ -114,7 +133,11 @@ export default function Portfolio() {
               </span>
               <span className="text-right">{usd(s.sizeUsd)}</span>
               <span className="text-right text-muted">{s.note}</span>
-              <span className={cx('text-right font-medium', s.pnlUsd >= 0 ? 'text-good' : 'text-bad')}>{signedUsd(s.pnlUsd)}</span>
+              <span
+                className={cx('text-right font-medium', s.pnlUsd >= 0 ? 'text-good' : 'text-bad')}
+              >
+                {signedUsd(s.pnlUsd)}
+              </span>
             </Link>
           )
         })}

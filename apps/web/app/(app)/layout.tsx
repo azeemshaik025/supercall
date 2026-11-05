@@ -9,7 +9,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar balance={me.balance} />
-        <main className="w-full max-w-[1200px] px-6 pt-7 pb-12">{children}</main>
+        <main className="mx-auto w-full max-w-[1600px] px-6 pt-7 pb-12">{children}</main>
       </div>
     </div>
   )

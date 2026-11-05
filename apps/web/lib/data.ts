@@ -1,4 +1,4 @@
-import { makeCandles } from './candles'
+import { HOUR, makeCandles } from './candles'
 import * as mock from './mock/fixtures'
 import type { Asset, Call, CallStatus, Candle } from './types'
 
@@ -43,19 +43,55 @@ export const statusLabel: Record<
   void: { label: 'Cancelled', tone: 'faint' },
 }
 
-/** Hourly candles from the call's entry to the current price. */
-export function candlesFor(call: Call, count = 40): Candle[] {
+const floorHour = (ms: number) => Math.floor(ms / HOUR) * HOUR
+
+/**
+ * Hourly bars around a call: twelve hours before it was made, drifting to the entry, then
+ * from the entry to the price now (or to the deadline for an ended call).
+ */
+export function candlesFor(call: Call): Candle[] {
   const seed = Number(call.id.slice(1)) * 7
-  const start = call.entry * (call.long ? 0.988 : 1.012)
-  return makeCandles(seed, count, start, call.price)
+  const made = floorHour(Date.parse(call.createdAt))
+  const ended = !isOpen(call.status)
+  const end = floorHour(Math.min(NOW.getTime(), ended ? Date.parse(call.expiresAt) : NOW.getTime()))
+  const before = makeCandles(seed, 12, call.entry * (call.long ? 0.975 : 1.025), call.entry, {
+    endAt: made - HOUR,
+  })
+  const afterCount = Math.max(2, Math.min(160, Math.round((end - made) / HOUR) + 1))
+  const last =
+    ended && call.result !== undefined
+      ? call.entry * (1 + (call.long ? call.result : -call.result))
+      : call.price
+  const after = makeCandles(seed + 3, afterCount, call.entry, last, { endAt: end })
+  return [...before, ...after]
 }
 
-export function marketCandles(asset: Asset, count = 72): Candle[] {
+export function marketCandles(asset: Asset, count = 90, step = HOUR): Candle[] {
   const m = marketBySymbol(asset)
   if (!m) return []
-  return makeCandles(asset.length * 11, count, m.price * (1 - m.change24h * 3), m.price, 0.01)
+  return makeCandles(asset.length * 11, count, m.price * (1 - m.change24h * 3), m.price, {
+    wiggle: 0.01,
+    endAt: floorHour(NOW.getTime()),
+    step,
+  })
 }
 
 export function miniCandles(call: Call): Candle[] {
-  return candlesFor(call, 12)
+  return candlesFor(call).slice(-12)
+}
+
+/** The viewer's own buys and sells on a call, for chart marks. */
+export function marksFor(callId: string): { kind: 'in' | 'sold'; at: string; price: number }[] {
+  return [
+    ...positions
+      .filter((p) => p.callId === callId)
+      .map((p) => ({ kind: 'in' as const, at: p.at, price: p.boughtAt })),
+    ...settled
+      .filter((s) => s.callId === callId && s.soldAt)
+      .map((s) => ({
+        kind: 'sold' as const,
+        at: s.soldAt as string,
+        price: callById(callId)?.price ?? 0,
+      })),
+  ]
 }

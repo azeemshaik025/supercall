@@ -13,7 +13,8 @@ export type CallStatus =
   | 'unfired'
   | 'void'
 
-export type Candle = { o: number; h: number; l: number; c: number; v: number }
+/** One bar; `t` is its open time in ms. */
+export type Candle = { t: number; o: number; h: number; l: number; c: number; v: number }
 
 export type Call = {
   id: string
@@ -62,11 +63,13 @@ export type Caller = {
 
 export type Copier = { who: string; sizeUsd: number; pnlUsd: number; ago: string }
 
-export type Position = { id: string; callId: string; sizeUsd: number; boughtAt: number }
+export type Position = { id: string; callId: string; sizeUsd: number; boughtAt: number; at: string }
 
 export type Settled = {
   id: string
   callId: string
+  boughtAt?: string
+  soldAt?: string
   sizeUsd: number
   note: string
   pnlUsd: number
