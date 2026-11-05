@@ -98,7 +98,7 @@ export function Composer() {
             Browse calls
           </Link>
           <Link
-            href="/me?tab=calling"
+            href="/my-calls"
             className="btn-cta flex h-11 items-center justify-center text-[13px]"
           >
             See my calls

@@ -22,6 +22,7 @@ function crumbs(path: string): [string, string] {
     '/callers': ['Overview', 'Callers'],
     '/compose': ['Calls', 'Publish a call'],
     '/me': ['Account', 'Portfolio'],
+    '/my-calls': ['Calls', 'My calls'],
     '/profile': ['Account', 'Settings'],
   }
   return map[path] ?? ['Overview', 'Supercall']

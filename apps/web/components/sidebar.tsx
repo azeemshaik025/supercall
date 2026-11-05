@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
+import { me } from '@/lib/data'
 import { cx, Icon } from './ui'
 
-type Item = { href: string; label: string; icon: string; match: (p: string) => boolean }
+type Item = { href: string; label: string; icon: string; active: (p: string) => boolean }
 
 const groups: { title?: string; items: Item[] }[] = [
   {
@@ -13,95 +15,128 @@ const groups: { title?: string; items: Item[] }[] = [
         href: '/explore',
         label: 'Explore',
         icon: 'explore',
-        match: (p) => p.startsWith('/explore') || p.startsWith('/c/') || p.startsWith('/markets'),
+        active: (p) => p.startsWith('/explore') || p.startsWith('/c/') || p.startsWith('/markets'),
       },
       {
         href: '/callers',
         label: 'Callers',
         icon: 'callers',
-        match: (p) => p.startsWith('/callers') || (p.startsWith('/u/') && p !== '/u/rakesh'),
+        active: (p) => p.startsWith('/callers') || (p.startsWith('/u/') && p !== `/u/${me.handle}`),
       },
     ],
   },
   {
     title: 'Calls',
     items: [
-      {
-        href: '/compose',
-        label: 'Publish a call',
-        icon: 'publish',
-        match: (p) => p.startsWith('/compose'),
-      },
-      { href: '/me?tab=calling', label: 'My calls', icon: 'my-calls', match: () => false },
+      { href: '/compose', label: 'Publish a call', icon: 'publish', active: (p) => p === '/compose' },
+      { href: '/my-calls', label: 'My calls', icon: 'my-calls', active: (p) => p === '/my-calls' },
     ],
   },
   {
     title: 'Account',
     items: [
-      { href: '/me', label: 'Portfolio', icon: 'portfolio', match: (p) => p.startsWith('/me') },
-      { href: '/u/rakesh', label: 'Profile', icon: 'profile', match: (p) => p === '/u/rakesh' },
+      { href: '/me', label: 'Portfolio', icon: 'portfolio', active: (p) => p === '/me' },
+      { href: `/u/${me.handle}`, label: 'Profile', icon: 'profile', active: (p) => p === `/u/${me.handle}` },
+      { href: '/profile', label: 'Settings', icon: 'settings', active: (p) => p === '/profile' },
     ],
   },
 ]
 
-const bottom: Item[] = [
-  {
-    href: '/onboarding',
-    label: 'Support',
-    icon: 'support',
-    match: (p) => p.startsWith('/onboarding'),
-  },
-  { href: '/profile', label: 'Settings', icon: 'settings', match: (p) => p.startsWith('/profile') },
-]
-
-function NavLink({ item, active }: { item: Item; active: boolean }) {
-  return (
-    <Link
-      href={item.href}
-      aria-current={active ? 'page' : undefined}
-      className={cx(
-        'flex h-10 items-center gap-3 border px-3 text-sm',
-        active ? 'sheen text-ink' : 'border-transparent text-muted hover:text-ink',
-      )}
-    >
-      <Icon name={item.icon} />
-      {item.label}
-    </Link>
-  )
-}
+const RAIL = 64
+const FULL = 236
+/** Chart-first pages open with the sidebar folded so the chart gets the room. */
+const chartFirst = (p: string) => p.startsWith('/c/') || p === '/compose' || p.startsWith('/markets')
 
 export function Sidebar() {
   const path = usePathname()
+  const [pinned, setPinned] = useState<boolean | null>(null)
+  const [hover, setHover] = useState(false)
+  const isPinned = pinned ?? !chartFirst(path)
+  const open = isPinned || hover
+
   return (
-    <nav
-      aria-label="Main"
-      className="sticky top-0 flex h-screen w-60 shrink-0 flex-col gap-6 border-r border-line bg-sidebar px-3 py-5 max-lg:hidden"
+    <div
+      className="sticky top-0 hidden h-screen shrink-0 transition-[width] duration-300 ease-out lg:block"
+      style={{ width: isPinned ? FULL : RAIL }}
     >
-      <Link href="/explore" className="px-2.5 py-1">
-        <img src="/brand/logo.svg" alt="Supercall" className="h-[26px] w-auto" />
-      </Link>
-      {groups.map((g) => (
-        <div key={g.title ?? 'main'} className="flex flex-col gap-0.5">
-          {g.title && <span className="px-3 pb-1.5 text-[12px] text-muted">{g.title}</span>}
-          {g.items.map((i) => (
-            <NavLink key={i.label} item={i} active={i.match(path)} />
+      <aside
+        aria-label="Main"
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        className={cx(
+          'absolute inset-y-0 left-0 z-40 flex flex-col overflow-hidden border-r border-line bg-sidebar transition-[width,box-shadow] duration-300 ease-out',
+          !isPinned && hover && 'shadow-[12px_0_40px_-12px_rgb(0_0_0/0.7)]',
+        )}
+        style={{ width: open ? FULL : RAIL }}
+      >
+        <div className="flex h-16 shrink-0 items-center border-b border-line px-4">
+          <Link href="/explore" aria-label="Supercall: explore calls" className="flex shrink-0 items-center gap-1">
+            <img src="/brand/mark.svg" alt="" className="size-8" />
+            <img
+              src="/brand/wordmark.svg"
+              alt=""
+              className={cx('h-8 w-auto transition-opacity duration-200', open ? 'opacity-100' : 'opacity-0')}
+            />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setPinned(!isPinned)}
+            aria-label={isPinned ? 'Collapse sidebar' : 'Keep sidebar open'}
+            tabIndex={open ? 0 : -1}
+            className={cx(
+              'ml-auto grid size-6 shrink-0 cursor-pointer place-items-center border border-silver/10 bg-silver/10 text-silver transition-opacity duration-200 hover:bg-silver/20',
+              open ? 'opacity-100' : 'pointer-events-none opacity-0',
+            )}
+          >
+            <Icon name="chevron-left" size={18} className={cx('transition-transform duration-300', !isPinned && 'rotate-180')} />
+          </button>
+        </div>
+
+        <nav className={cx('min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-4 transition-[padding] duration-300', open ? 'pt-1' : 'pt-4')}>
+          {groups.map((g) => (
+            <div key={g.title ?? 'main'}>
+              {g.title && (
+                <div
+                  className={cx(
+                    'flex items-end overflow-hidden px-2.5 text-[12px] whitespace-nowrap text-faint transition-[height,padding,opacity] duration-300',
+                    open ? 'h-11 pb-2.5 opacity-100' : 'h-0 pb-0 opacity-0',
+                  )}
+                >
+                  {g.title}
+                </div>
+              )}
+              {g.items.map((item) => {
+                const on = item.active(path)
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    title={open ? undefined : item.label}
+                    aria-current={on ? 'page' : undefined}
+                    className={cx(
+                      'mb-1 flex h-[38px] items-center gap-[11px] border pl-2.5 text-[14px] whitespace-nowrap',
+                      on ? 'sheen text-ink' : 'border-transparent text-muted hover:text-ink',
+                    )}
+                  >
+                    <Icon name={item.icon} />
+                    <span className={cx('transition-opacity duration-200', open ? 'opacity-100' : 'opacity-0')}>{item.label}</span>
+                  </Link>
+                )
+              })}
+            </div>
           ))}
-        </div>
-      ))}
-      <div className="mt-auto flex flex-col gap-0.5">
-        {bottom.map((i) => (
-          <NavLink key={i.label} item={i} active={i.match(path)} />
-        ))}
-        <div className="mt-2.5 flex items-center gap-2.5 border-t border-line px-2.5 pt-3">
-          <span className="grid size-8 place-items-center bg-surface-3 text-[13px] text-silver">
-            R
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-2.5 border-t border-line px-4 py-3">
+          <span className="grid size-8 shrink-0 place-items-center bg-surface-3 text-[13px] text-silver">
+            {me.handle[0]?.toUpperCase()}
           </span>
-          <span className="flex min-w-0 flex-col">
-            <span className="text-[13px] font-medium">@rakesh</span>
-            <span className="font-mono text-[12px] text-muted">0x7a3f…91c2</span>
+          <span className={cx('flex min-w-0 flex-col transition-opacity duration-200', open ? 'opacity-100' : 'opacity-0')}>
+            <span className="text-[13px] font-medium">@{me.handle}</span>
+            <span className="font-mono text-[12px] text-muted">{me.address}</span>
           </span>
         </div>
-      </div>
-    </nav>
+      </aside>
+    </div>
   )
 }
