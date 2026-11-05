@@ -1,6 +1,6 @@
 import { makeCandles } from './candles'
 import * as mock from './mock/fixtures'
-import type { Asset, Call, Candle, CallStatus } from './types'
+import type { Asset, Call, CallStatus, Candle } from './types'
 
 /**
  * The one data module. Screens import from here, never from fixtures, so switching
@@ -13,14 +13,25 @@ export const { NOW, calls, callers, markets, copiers, positions, settled, notifi
 export const callById = (id: string) => calls.find((c) => c.id === id)
 export const callerByHandle = (h: string) => callers.find((c) => c.handle === h)
 export const callsBy = (h: string) => calls.filter((c) => c.caller === h)
-export const marketBySymbol = (s: string) => markets.find((m) => m.symbol.toLowerCase() === s.toLowerCase())
+export const marketBySymbol = (s: string) =>
+  markets.find((m) => m.symbol.toLowerCase() === s.toLowerCase())
 export const openCallsOn = (a: Asset) => calls.filter((c) => c.asset === a && isOpen(c.status))
 
 export const OPEN: CallStatus[] = ['posted', 'armed', 'live']
-export const ENDED: CallStatus[] = ['won', 'lost', 'expired-profit', 'expired-loss', 'unfired', 'void']
+export const ENDED: CallStatus[] = [
+  'won',
+  'lost',
+  'expired-profit',
+  'expired-loss',
+  'unfired',
+  'void',
+]
 export const isOpen = (s: CallStatus) => OPEN.includes(s)
 
-export const statusLabel: Record<CallStatus, { label: string; tone: 'good' | 'bad' | 'warn' | 'faint' }> = {
+export const statusLabel: Record<
+  CallStatus,
+  { label: string; tone: 'good' | 'bad' | 'warn' | 'faint' }
+> = {
   posted: { label: 'Posted', tone: 'warn' },
   armed: { label: 'Open', tone: 'good' },
   live: { label: 'Live', tone: 'good' },

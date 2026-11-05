@@ -4,7 +4,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Supercall',
-  description: "Trading calls where callers get paid only when they're right.",
+  description: 'Trading calls where callers get paid only when they’re right.',
   icons: {
     icon: [
       { url: '/brand/favicon-dark.png', media: '(prefers-color-scheme: light)' },

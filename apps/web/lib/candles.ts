@@ -1,7 +1,13 @@
 import type { Candle } from './types'
 
 /** Deterministic candles that drift from `from` to `to`, for dummy charts. */
-export function makeCandles(seed: number, count: number, from: number, to: number, wiggle = 0.012): Candle[] {
+export function makeCandles(
+  seed: number,
+  count: number,
+  from: number,
+  to: number,
+  wiggle = 0.012,
+): Candle[] {
   const out: Candle[] = []
   let prev = from
   for (let i = 0; i < count; i++) {

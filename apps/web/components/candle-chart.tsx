@@ -1,12 +1,13 @@
 'use client'
 
-import { type DeepPartial, type KLineData, type Styles, dispose, init } from 'klinecharts'
+import { type DeepPartial, dispose, init, type KLineData, type Styles } from 'klinecharts'
 import { useEffect, useRef } from 'react'
 import type { Candle } from '@/lib/types'
 
 export type Level = { value: number; color: string; dashed?: boolean }
 
-const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+const css = (name: string) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 
 function styles(): DeepPartial<Styles> {
   const good = css('--sc-good')
@@ -37,7 +38,7 @@ function styles(): DeepPartial<Styles> {
   }
 }
 
-/** Candles from KLineChart, with the call's levels drawn as locked horizontal lines. */
+/** Candles from KLineChart, with the call’s levels drawn as locked horizontal lines. */
 export function CandleChart({
   candles,
   levels = [],
@@ -76,7 +77,13 @@ export function CandleChart({
         name: 'horizontalStraightLine',
         lock: true,
         points: [{ value: l.value }],
-        styles: { line: { color: l.color.startsWith('--') ? css(l.color) : l.color, style: (l.dashed ? 'dashed' : 'solid') as never, dashedValue: [4, 4] } },
+        styles: {
+          line: {
+            color: l.color.startsWith('--') ? css(l.color) : l.color,
+            style: (l.dashed ? 'dashed' : 'solid') as never,
+            dashedValue: [4, 4],
+          },
+        },
       })
     }
     return () => dispose(el)

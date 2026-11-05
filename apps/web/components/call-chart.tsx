@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { NOW, candlesFor } from '@/lib/data'
+import { candlesFor, NOW } from '@/lib/data'
 import type { Call } from '@/lib/types'
 import { CandleChart, type Level } from './candle-chart'
 import { Segmented } from './ui'
@@ -24,13 +24,28 @@ export function CallChart({ call }: { call: Call }) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <span className="flex gap-4 text-[12px] text-muted">
-          <span className="flex items-center gap-1.5"><span className="h-px w-3.5 border-t border-dashed border-good" />Target</span>
-          <span className="flex items-center gap-1.5"><span className="h-px w-3.5 border-t border-dashed border-entry" />Entry</span>
-          <span className="flex items-center gap-1.5"><span className="h-px w-3.5 border-t border-dashed border-bad" />Stop</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-px w-3.5 border-t border-dashed border-good" />
+            Target
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-px w-3.5 border-t border-dashed border-entry" />
+            Entry
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-px w-3.5 border-t border-dashed border-bad" />
+            Stop
+          </span>
         </span>
         <Segmented label="Range" options={RANGES} value={range} onChange={setRange} />
       </div>
-      <CandleChart candles={candles} levels={levels} height={340} label={`Hourly ${call.asset} candles since the call`} endAt={NOW.getTime()} />
+      <CandleChart
+        candles={candles}
+        levels={levels}
+        height={340}
+        label={`Hourly ${call.asset} candles since the call`}
+        endAt={NOW.getTime()}
+      />
     </div>
   )
 }

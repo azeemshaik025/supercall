@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { CopyPanel } from '@/components/copy-panel'
 import { StatusBar } from '@/components/status-bar'
-import { SideTag, TokenIcon, VerifiedBadge, cx } from '@/components/ui'
+import { cx, SideTag, TokenIcon, VerifiedBadge } from '@/components/ui'
 import { callById, callerByHandle, calls, me } from '@/lib/data'
 import { pct, price } from '@/lib/format'
 import { moveVsEntry } from '@/lib/money'
@@ -32,20 +32,27 @@ export default async function CopyPopup({ params }: { params: Promise<{ id: stri
               <SideTag long={call.long} />
             </span>
             <span className="flex items-center gap-1 text-[12px] text-muted">
-              @{call.caller} {caller?.verified && <VerifiedBadge />} · SF {caller?.superFactor ?? 50}
+              @{call.caller} {caller?.verified && <VerifiedBadge />} · SF{' '}
+              {caller?.superFactor ?? 50}
             </span>
           </span>
           <span className="flex flex-col items-end gap-1">
             <span className="text-[16px] font-medium">{price(call.price)}</span>
-            <span className={cx('text-[12px]', move >= 0 ? 'text-good' : 'text-bad')}>{pct(move, 2)} vs entry</span>
+            <span className={cx('text-[12px]', move >= 0 ? 'text-good' : 'text-bad')}>
+              {pct(move, 2)} vs entry
+            </span>
           </span>
         </div>
         <div className="flex flex-col gap-2">
           <StatusBar call={call} />
           <div className="flex justify-between text-[12px] text-muted">
-            <span>Stop <span className="text-bad">{price(call.stop)}</span></span>
+            <span>
+              Stop <span className="text-bad">{price(call.stop)}</span>
+            </span>
             <span>Entry {price(call.entry)}</span>
-            <span>Target <span className="text-good">{price(call.target)}</span></span>
+            <span>
+              Target <span className="text-good">{price(call.target)}</span>
+            </span>
           </div>
         </div>
       </section>

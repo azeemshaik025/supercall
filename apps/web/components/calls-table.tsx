@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { ENDED, NOW, OPEN, callerByHandle, miniCandles, statusLabel } from '@/lib/data'
+import { callerByHandle, ENDED, miniCandles, NOW, OPEN, statusLabel } from '@/lib/data'
 import { ago, pct, price, usdShort } from '@/lib/format'
 import { moveVsEntry } from '@/lib/money'
 import type { Call } from '@/lib/types'
 import { MiniCandles } from './mini-candles'
-import { Segmented, SideTag, TokenIcon, cx } from './ui'
+import { cx, Segmented, SideTag, TokenIcon } from './ui'
 
 const FILTERS = ['All', 'Live', 'Upcoming', 'Settled'] as const
 type Filter = (typeof FILTERS)[number]
@@ -28,15 +28,34 @@ export function CallsTable({ calls }: { calls: Call[] }) {
     const needle = q.trim().toLowerCase()
     return calls
       .filter((c) => matches(filter, c))
-      .filter((c) => !needle || c.asset.toLowerCase().includes(needle) || c.caller.toLowerCase().includes(needle))
-      .sort((a, b) => Number(OPEN.includes(b.status)) - Number(OPEN.includes(a.status)) || b.createdAt.localeCompare(a.createdAt))
+      .filter(
+        (c) =>
+          !needle ||
+          c.asset.toLowerCase().includes(needle) ||
+          c.caller.toLowerCase().includes(needle),
+      )
+      .sort(
+        (a, b) =>
+          Number(OPEN.includes(b.status)) - Number(OPEN.includes(a.status)) ||
+          b.createdAt.localeCompare(a.createdAt),
+      )
   }, [calls, filter, q])
 
   return (
     <section aria-label="All calls" className="surface-card">
       <div className="flex flex-wrap items-center gap-2 px-4 py-3.5">
         <label className="flex h-9 max-w-80 flex-[1_1_220px] items-center gap-2 border border-line-strong bg-sidebar px-3">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="text-muted">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+            className="text-muted"
+          >
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.5-3.5" />
           </svg>
@@ -63,7 +82,9 @@ export function CallsTable({ calls }: { calls: Call[] }) {
             <span>Status</span>
             <span>Last 12h</span>
           </div>
-          {rows.length === 0 && <p className="px-4 py-10 text-center text-[13px] text-muted">No calls match.</p>}
+          {rows.length === 0 && (
+            <p className="px-4 py-10 text-center text-[13px] text-muted">No calls match.</p>
+          )}
           {rows.map((c) => {
             const move = moveVsEntry(c)
             const st = statusLabel[c.status]
@@ -86,10 +107,12 @@ export function CallsTable({ calls }: { calls: Call[] }) {
                 </span>
                 <span className="flex flex-col gap-1">
                   <span className="text-[14px]">{price(c.price)}</span>
-                  <span className={cx('text-[12px]', move >= 0 ? 'text-good' : 'text-bad')}>{pct(move, 2)}</span>
+                  <span className={cx('text-[12px]', move >= 0 ? 'text-good' : 'text-bad')}>
+                    {pct(move, 2)}
+                  </span>
                 </span>
                 <span className="text-[13px] text-silver">
-                  {price(c.stop)} → {price(c.target)}
+                  {price(c.stop)} to {price(c.target)}
                 </span>
                 <span className="text-[14px]">{c.copiedUsd ? usdShort(c.copiedUsd) : '—'}</span>
                 <span className="flex flex-col gap-1">

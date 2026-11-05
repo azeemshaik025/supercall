@@ -11,7 +11,14 @@ export default function Explore() {
       <PageTitle title="Explore" sub="Calls from verified humans, paid only when right." />
       <section aria-label="Boosted calls" className="space-y-3">
         <div className="flex items-center gap-2 text-[15px] font-medium">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="text-silver">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+            className="text-silver"
+          >
             <path d="M13 2L4 14h7l-1 8 9-12h-7z" />
           </svg>
           Boosted top-rated calls

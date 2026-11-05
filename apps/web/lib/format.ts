@@ -3,7 +3,8 @@ const n2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFra
 /** Prices keep enough digits for small coins. */
 export function price(v: number): string {
   if (v >= 1000) return v.toLocaleString('en-US', { maximumFractionDigits: 2 })
-  if (v >= 1) return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 3 })
+  if (v >= 1)
+    return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 3 })
   return v.toLocaleString('en-US', { maximumSignificantDigits: 3 })
 }
 
@@ -13,7 +14,12 @@ export function usd(v: number): string {
 
 export function usdShort(v: number): string {
   const a = Math.abs(v)
-  const s = a >= 1e6 ? `$${(a / 1e6).toFixed(1)}M` : a >= 1e3 ? `$${(a / 1e3).toFixed(a >= 1e5 ? 0 : 1)}K` : `$${a.toFixed(0)}`
+  const s =
+    a >= 1e6
+      ? `$${(a / 1e6).toFixed(1)}M`
+      : a >= 1e3
+        ? `$${(a / 1e3).toFixed(a >= 1e5 ? 0 : 1)}K`
+        : `$${a.toFixed(0)}`
   return v < 0 ? `−${s}` : s
 }
 
@@ -42,5 +48,9 @@ export function ago(iso: string, now: Date): string {
 }
 
 export function shortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
 }

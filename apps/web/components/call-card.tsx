@@ -4,7 +4,7 @@ import { pct, price, timeLeft, usdShort } from '@/lib/format'
 import { moveVsEntry } from '@/lib/money'
 import type { Call, Caller } from '@/lib/types'
 import { StatusBar } from './status-bar'
-import { SideTag, TokenIcon, VerifiedBadge, cx } from './ui'
+import { cx, SideTag, TokenIcon, VerifiedBadge } from './ui'
 
 /** Header, price vs entry, status bar, levels, caller. */
 export function CallCard({ call, caller }: { call: Call; caller?: Caller }) {
@@ -18,12 +18,16 @@ export function CallCard({ call, caller }: { call: Call; caller?: Caller }) {
           <span className="font-normal text-muted">/USDC</span>
         </span>
         <SideTag long={call.long} />
-        <span className="ml-auto text-[12px] whitespace-nowrap text-muted">{timeLeft(call.expiresAt, NOW)} left</span>
+        <span className="ml-auto text-[12px] whitespace-nowrap text-muted">
+          {timeLeft(call.expiresAt, NOW)} left
+        </span>
       </div>
       <div className="flex items-end justify-between gap-3 px-4 pt-4 pb-3.5">
         <span className="flex flex-col gap-1">
           <span className="text-[12px] text-muted">Now</span>
-          <span className="text-[26px] leading-none font-medium tracking-[-0.03em]">{price(call.price)}</span>
+          <span className="text-[26px] leading-none font-medium tracking-[-0.03em]">
+            {price(call.price)}
+          </span>
         </span>
         <span className={cx('text-[13px] font-medium', move >= 0 ? 'text-good' : 'text-bad')}>
           {pct(move, 2)} <span className="text-[12px] font-normal text-muted">vs entry</span>
@@ -52,7 +56,9 @@ export function CallCard({ call, caller }: { call: Call; caller?: Caller }) {
         <span className="ml-auto text-muted">
           SF <span className="text-ink">{caller?.superFactor ?? 50}</span>
         </span>
-        <span aria-hidden="true" className="text-faint">|</span>
+        <span aria-hidden="true" className="text-faint">
+          |
+        </span>
         <span className="text-muted">{usdShort(call.copiedUsd)} copied</span>
       </div>
     </Link>

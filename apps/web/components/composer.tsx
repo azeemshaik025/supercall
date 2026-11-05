@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { NOW, marketCandles, markets, me } from '@/lib/data'
+import { marketCandles, markets, me, NOW } from '@/lib/data'
 import { pct, price, usd } from '@/lib/format'
 import { CALL_FEE, CREDIT_SHARE, callerCut } from '@/lib/money'
 import type { Asset } from '@/lib/types'
 import { CandleChart, type Level } from './candle-chart'
-import { Info, Segmented, TokenIcon, cx } from './ui'
+import { cx, Info, Segmented, TokenIcon } from './ui'
 
 const TIMEFRAMES = ['15m', '1h', '4h', '1d'] as const
 const EXPIRIES = ['4h', '24h', '3d', '7d'] as const
@@ -15,13 +15,21 @@ const TF_MS = { '15m': 900_000, '1h': 3_600_000, '4h': 14_400_000, '1d': 86_400_
 
 function defaults(p: number, long: boolean) {
   return long
-    ? { target: +(p * 1.066).toPrecision(4), entry: +p.toPrecision(4), stop: +(p * 0.959).toPrecision(4) }
-    : { target: +(p * 0.934).toPrecision(4), entry: +p.toPrecision(4), stop: +(p * 1.041).toPrecision(4) }
+    ? {
+        target: +(p * 1.066).toPrecision(4),
+        entry: +p.toPrecision(4),
+        stop: +(p * 0.959).toPrecision(4),
+      }
+    : {
+        target: +(p * 0.934).toPrecision(4),
+        entry: +p.toPrecision(4),
+        stop: +(p * 1.041).toPrecision(4),
+      }
 }
 
 export function Composer() {
   const [asset, setAsset] = useState<Asset>('ETH')
-  const market = markets.find((m) => m.symbol === asset) ?? markets[0]!
+  const market = markets.find((m) => m.symbol === asset) ?? (markets[0] as (typeof markets)[number])
   const [tf, setTf] = useState<(typeof TIMEFRAMES)[number]>('1h')
   const [long, setLong] = useState(true)
   const [levels, setLevels] = useState(() => defaults(market.price, true))
@@ -32,7 +40,7 @@ export function Composer() {
   const [step, setStep] = useState<'edit' | 'review' | 'done'>('edit')
 
   const reset = (a: Asset, l: boolean) => {
-    const m = markets.find((x) => x.symbol === a) ?? markets[0]!
+    const m = markets.find((x) => x.symbol === a) ?? (markets[0] as (typeof markets)[number])
     setLevels(defaults(m.price, l))
   }
 
@@ -48,14 +56,22 @@ export function Composer() {
 
   const reward = Math.abs(levels.target - levels.entry) / levels.entry
   const risk = Math.abs(levels.entry - levels.stop) / levels.entry
-  const ordered = long ? levels.target > levels.entry && levels.entry > levels.stop : levels.target < levels.entry && levels.entry < levels.stop
-  const problem = !ordered ? (long ? 'For a long, target must be above entry and stop below it.' : 'For a short, target must be below entry and stop above it.') : null
+  const ordered = long
+    ? levels.target > levels.entry && levels.entry > levels.stop
+    : levels.target < levels.entry && levels.entry < levels.stop
+  const problem = !ordered
+    ? long
+      ? 'For a long, target must be above entry and stop below it.'
+      : 'For a short, target must be below entry and stop above it.'
+    : null
   const cut = callerCut(me.superFactor) * (1 - boost / 100)
   const keepPer1k = 1000 * CALL_FEE * cut
   const payPer1k = 1000 * risk * CREDIT_SHARE
   const canBoost = me.superFactor >= 70
 
-  const ladder = (long ? (['target', 'entry', 'stop'] as const) : (['stop', 'entry', 'target'] as const)).map((k) => ({
+  const ladder = (
+    long ? (['target', 'entry', 'stop'] as const) : (['stop', 'entry', 'target'] as const)
+  ).map((k) => ({
     key: k,
     label: k === 'target' ? 'Target' : k === 'entry' ? 'Entry' : 'Stop',
     dot: k === 'target' ? 'bg-good' : k === 'entry' ? 'bg-entry' : 'bg-bad',
@@ -66,14 +82,27 @@ export function Composer() {
   if (step === 'done') {
     return (
       <section className="surface-card mx-auto flex max-w-md flex-col items-center gap-3 p-8 text-center">
-        <span className="grid size-12 place-items-center bg-good-soft text-[22px] text-good">✓</span>
+        <span className="grid size-12 place-items-center bg-good-soft text-[22px] text-good">
+          ✓
+        </span>
         <h1 className="text-[24px] font-medium">Call published</h1>
         <p className="text-[13px] text-muted">
-          {long ? 'Long' : 'Short'} {asset} is on Arkiv and can't be edited or deleted. Followers can copy it once price is in your entry zone.
+          {long ? 'Long' : 'Short'} {asset} is on Arkiv and can’t be edited or deleted. Followers
+          can copy it once price is in your entry zone.
         </p>
         <div className="mt-3 grid w-full grid-cols-2 gap-2">
-          <Link href="/explore" className="flex h-11 items-center justify-center border border-line-strong bg-sidebar text-[13px]">Browse calls</Link>
-          <Link href="/me?tab=calling" className="btn-cta flex h-11 items-center justify-center text-[13px]">See my calls</Link>
+          <Link
+            href="/explore"
+            className="flex h-11 items-center justify-center border border-line-strong bg-sidebar text-[13px]"
+          >
+            Browse calls
+          </Link>
+          <Link
+            href="/me?tab=calling"
+            className="btn-cta flex h-11 items-center justify-center text-[13px]"
+          >
+            See my calls
+          </Link>
         </div>
       </section>
     )
@@ -102,19 +131,45 @@ export function Composer() {
               ))}
             </select>
           </label>
-          <span className="flex flex-col gap-0.5"><span className="text-[12px] text-muted">Price</span><span className="text-[15px] font-medium">{price(market.price)}</span></span>
-          <span className="flex flex-col gap-0.5"><span className="text-[12px] text-muted">24h</span><span className={cx('text-[15px] font-medium', market.change24h >= 0 ? 'text-good' : 'text-bad')}>{pct(market.change24h)}</span></span>
-          <div className="ml-auto"><Segmented label="Timeframe" options={TIMEFRAMES} value={tf} onChange={setTf} /></div>
+          <span className="flex flex-col gap-0.5">
+            <span className="text-[12px] text-muted">Price</span>
+            <span className="text-[15px] font-medium">{price(market.price)}</span>
+          </span>
+          <span className="flex flex-col gap-0.5">
+            <span className="text-[12px] text-muted">24h</span>
+            <span
+              className={cx(
+                'text-[15px] font-medium',
+                market.change24h >= 0 ? 'text-good' : 'text-bad',
+              )}
+            >
+              {pct(market.change24h)}
+            </span>
+          </span>
+          <div className="ml-auto">
+            <Segmented label="Timeframe" options={TIMEFRAMES} value={tf} onChange={setTf} />
+          </div>
         </div>
         <div className="p-5">
-          <CandleChart candles={candles} levels={lines} height={460} label={`${asset} candles with your levels`} hourMs={TF_MS[tf]} endAt={NOW.getTime()} />
+          <CandleChart
+            candles={candles}
+            levels={lines}
+            height={460}
+            label={`${asset} candles with your levels`}
+            hourMs={TF_MS[tf]}
+            endAt={NOW.getTime()}
+          />
         </div>
       </section>
 
       <aside aria-label="New call" className="surface-card flex min-w-0 flex-[1_1_340px] flex-col">
         <div className="flex items-baseline justify-between border-b border-line px-5 py-4">
-          <h1 className="text-[15px] font-medium">{step === 'review' ? 'Review call' : 'New call'}</h1>
-          <span className="text-[12px] text-muted">SuperFactor <span className="text-ink">{me.superFactor}</span></span>
+          <h1 className="text-[15px] font-medium">
+            {step === 'review' ? 'Review call' : 'New call'}
+          </h1>
+          <span className="text-[12px] text-muted">
+            SuperFactor <span className="text-ink">{me.superFactor}</span>
+          </span>
         </div>
 
         {step === 'review' ? (
@@ -128,19 +183,42 @@ export function Composer() {
                 ['Expires in', expiry],
                 ['Boost', boost ? `${boost}% of your cut` : 'None'],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between"><dt className="text-muted">{k}</dt><dd>{v}</dd></div>
+                <div key={k} className="flex justify-between">
+                  <dt className="text-muted">{k}</dt>
+                  <dd>{v}</dd>
+                </div>
               ))}
             </dl>
-            {thesis && <p className="border-l border-line-strong pl-3 text-[13px] text-silver">“{thesis}”</p>}
-            <p className="text-[12px] text-muted">Publishing writes this call to Arkiv. It can't be edited or deleted, and it counts toward your SuperFactor.</p>
+            {thesis && (
+              <p className="border-l border-line-strong pl-3 text-[13px] text-silver">“{thesis}”</p>
+            )}
+            <p className="text-[12px] text-muted">
+              Publishing writes this call to Arkiv. It can’t be edited or deleted, and it counts
+              toward your SuperFactor.
+            </p>
             <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setStep('edit')} className="h-11 cursor-pointer border border-line-strong bg-sidebar text-[13px]">Back</button>
-              <button type="button" onClick={() => setStep('done')} className="btn-cta h-11 cursor-pointer text-[13px]">Publish</button>
+              <button
+                type="button"
+                onClick={() => setStep('edit')}
+                className="h-11 cursor-pointer border border-line-strong bg-sidebar text-[13px]"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep('done')}
+                className="btn-cta h-11 cursor-pointer text-[13px]"
+              >
+                Publish
+              </button>
             </div>
           </div>
         ) : (
           <div className="flex flex-col gap-5 p-5">
-            <div role="group" aria-label="Direction" className="grid grid-cols-2 gap-0.5 border border-line bg-sidebar p-[3px]">
+            <fieldset
+              aria-label="Direction"
+              className="grid grid-cols-2 gap-0.5 border border-line bg-sidebar p-[3px]"
+            >
               {[true, false].map((l) => (
                 <button
                   key={String(l)}
@@ -150,16 +228,26 @@ export function Composer() {
                     setLong(l)
                     reset(asset, l)
                   }}
-                  className={cx('h-9 cursor-pointer text-[13px] font-medium', long === l ? (l ? 'bg-good-soft text-good' : 'bg-bad-soft text-bad') : 'text-muted hover:text-ink')}
+                  className={cx(
+                    'h-9 cursor-pointer text-[13px] font-medium',
+                    long === l
+                      ? l
+                        ? 'bg-good-soft text-good'
+                        : 'bg-bad-soft text-bad'
+                      : 'text-muted hover:text-ink',
+                  )}
                 >
                   {l ? 'Long' : 'Short'}
                 </button>
               ))}
-            </div>
+            </fieldset>
 
             <div className="flex flex-col gap-1.5">
               {ladder.map((r) => (
-                <label key={r.key} className="flex h-12 items-center gap-3 border border-line-strong bg-sidebar px-3">
+                <label
+                  key={r.key}
+                  className="flex h-12 items-center gap-3 border border-line-strong bg-sidebar px-3"
+                >
                   <span className={cx('size-2 shrink-0', r.dot)} />
                   <span className="w-[52px] text-[12px] text-muted">{r.label}</span>
                   <input
@@ -175,20 +263,35 @@ export function Composer() {
               {problem ? (
                 <p className="text-[12px] text-bad">{problem}</p>
               ) : (
-                <span className="text-[12px] text-muted">Reward is {(reward / risk).toFixed(1)}× the risk</span>
+                <span className="text-[12px] text-muted">
+                  Reward is {(reward / risk).toFixed(1)}× the risk
+                </span>
               )}
             </div>
 
             <label className="flex flex-col gap-2">
               <span className="flex justify-between text-[12px]">
                 <span className="flex items-center gap-1.5 text-muted">
-                  Entry zone <Info label="About the entry zone" text="Followers can copy while price is inside this zone around your entry." />
+                  Entry zone{' '}
+                  <Info
+                    label="About the entry zone"
+                    text="Followers can copy while price is inside this zone around your entry."
+                  />
                 </span>
                 <span>
-                  ±{band}% · {price(levels.entry * (1 - band / 100))} to {price(levels.entry * (1 + band / 100))}
+                  ±{band}% · {price(levels.entry * (1 - band / 100))} to{' '}
+                  {price(levels.entry * (1 + band / 100))}
                 </span>
               </span>
-              <input type="range" min={0.1} max={2} step={0.1} value={band} onChange={(e) => setBand(Number(e.target.value))} className="accent-steel" />
+              <input
+                type="range"
+                min={0.1}
+                max={2}
+                step={0.1}
+                value={band}
+                onChange={(e) => setBand(Number(e.target.value))}
+                className="accent-steel"
+              />
             </label>
 
             <div className="flex flex-col gap-2">
@@ -200,7 +303,12 @@ export function Composer() {
                     type="button"
                     aria-pressed={expiry === e}
                     onClick={() => setExpiry(e)}
-                    className={cx('h-[34px] cursor-pointer text-[12px]', expiry === e ? 'sheen text-ink' : 'border border-line bg-sidebar text-muted hover:text-ink')}
+                    className={cx(
+                      'h-[34px] cursor-pointer text-[12px]',
+                      expiry === e
+                        ? 'sheen text-ink'
+                        : 'border border-line bg-sidebar text-muted hover:text-ink',
+                    )}
                   >
                     {e}
                   </button>
@@ -223,20 +331,44 @@ export function Composer() {
             <label className="flex flex-col gap-2 border-t border-line pt-4">
               <span className="flex justify-between text-[12px]">
                 <span className="flex items-center gap-1.5 text-muted">
-                  Boost to Explore <Info label="About boost" text="Give up part of your cut to feature the call on Explore. Followers' protection doesn't change. SuperFactor 70+ only." />
+                  Boost to Explore{' '}
+                  <Info
+                    label="About boost"
+                    text="Give up part of your cut to feature the call on Explore. Followers' protection doesn’t change. SuperFactor 70+ only."
+                  />
                 </span>
                 <span>{canBoost ? `${boost}% of your cut` : 'SuperFactor 70+ only'}</span>
               </span>
-              <input type="range" min={0} max={50} step={5} value={boost} disabled={!canBoost} onChange={(e) => setBoost(Number(e.target.value))} className="accent-steel" />
+              <input
+                type="range"
+                min={0}
+                max={50}
+                step={5}
+                value={boost}
+                disabled={!canBoost}
+                onChange={(e) => setBoost(Number(e.target.value))}
+                className="accent-steel"
+              />
             </label>
 
             <dl className="flex flex-col border-t border-line text-[13px]">
               <dt className="pt-3.5 pb-1 text-[12px] text-muted">For every $1,000 copied</dt>
-              <div className="flex justify-between border-b border-line py-2.5"><dt className="text-muted">If you're right, you keep</dt><dd className="text-good">{usd(keepPer1k)}</dd></div>
-              <div className="flex justify-between py-2.5"><dt className="text-muted">If you're wrong, your fund pays</dt><dd className="text-bad">up to {usd(payPer1k)}</dd></div>
+              <div className="flex justify-between border-b border-line py-2.5">
+                <dt className="text-muted">If you’re right, you keep</dt>
+                <dd className="text-good">{usd(keepPer1k)}</dd>
+              </div>
+              <div className="flex justify-between py-2.5">
+                <dt className="text-muted">If you’re wrong, your fund pays</dt>
+                <dd className="text-bad">up to {usd(payPer1k)}</dd>
+              </div>
             </dl>
 
-            <button type="button" disabled={Boolean(problem)} onClick={() => setStep('review')} className="btn-cta h-[46px] cursor-pointer text-[14px]">
+            <button
+              type="button"
+              disabled={Boolean(problem)}
+              onClick={() => setStep('review')}
+              className="btn-cta h-[46px] cursor-pointer text-[14px]"
+            >
               Review call
             </button>
           </div>
