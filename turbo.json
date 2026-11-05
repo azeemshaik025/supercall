@@ -1,0 +1,15 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", ".output/**"]
+    },
+    "typecheck": { "dependsOn": ["^typecheck"] },
+    "test": {
+      "dependsOn": ["^build"],
+      "env": ["ARKIV_LIVE_TESTS"]
+    },
+    "dev": { "cache": false, "persistent": true }
+  }
+}
