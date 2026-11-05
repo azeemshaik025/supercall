@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { type CSSProperties, useState } from 'react'
 import { me } from '@/lib/data'
 import { price, signedUsd, usd } from '@/lib/format'
 import { estimate, inBand } from '@/lib/money'
@@ -237,18 +237,22 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
           </span>
         </label>
         <div className="flex flex-col gap-2.5">
-          <div className="relative h-4">
-            <div className="absolute inset-x-0 top-[7px] h-0.5 bg-line-strong" />
-            <div
-              className="absolute top-[7px] left-0 h-0.5 bg-steel"
-              style={{ width: `${fill}%` }}
-            />
-            <div
-              className="absolute top-px size-3.5 -translate-x-1/2 bg-white shadow-[0_0_12px_2px_var(--sc-glow)]"
-              style={{ left: `${fill}%` }}
-            />
-          </div>
-          <fieldset aria-label="Percent of balance" className="flex justify-between">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={Math.round(fill)}
+            onChange={(e) => {
+              const v = Number(e.target.value)
+              setPct(STOPS.find((x) => Math.abs(x - v) <= 2) ?? v)
+            }}
+            aria-label="Percent of balance"
+            aria-valuetext={`${Math.round(fill)}% of balance`}
+            className="range range-thin"
+            style={{ '--fill': `${fill}%` } as CSSProperties}
+          />
+          <fieldset aria-label="Quick amounts" className="flex justify-between">
             {STOPS.map((s) => (
               <button
                 key={s}
