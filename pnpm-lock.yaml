@@ -88,6 +88,12 @@ importers:
         specifier: workspace:*
         version: link:../config
 
+  packages/flash:
+    devDependencies:
+      '@supercall/config':
+        specifier: workspace:*
+        version: link:../config
+
   packages/identity:
     dependencies:
       '@privy-io/node':
