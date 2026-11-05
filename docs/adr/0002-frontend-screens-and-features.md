@@ -5,9 +5,8 @@ Proposed.
 ## Context
 
 `apps/web` is the website every follower and caller uses: browse calls, copy one, publish one,
-track positions. We have a working reference app from earlier testing whose screens, flows and
-look we keep. This ADR fixes what the frontend contains before any of it is written, so the
-API (ADR-0001 `apps/api`) and the frontend agree on the same screens and states.
+track positions. This ADR fixes what the frontend contains before any of it is written, so the
+API (`apps/api`) and the frontend agree on the same screens and states.
 
 The frontend is built first with dummy data, then switched to the API screen by screen.
 
@@ -15,14 +14,24 @@ The frontend is built first with dummy data, then switched to the API screen by 
 
 ### Look
 
-Same as the reference app. Dark only.
+Dark only.
 
-- Tokens copied as-is from the reference `globals.css`: near-black surfaces (`#04090e` to
-  `#0e212f`), ink `#eff1f4`, muted `#8799a8`, steel `#6e9fcb`, entry blue `#4baefb`, good
-  `#3ecf8e`, bad `#ff4566`, warn `#fdb529`, silver primary button, brand gradient.
-- Square corners (`--radius: 0`). Inter for text, Geist Mono for addresses and hashes.
-- Final logos and icons from the reference `public/` (brand mark, wordmark, verified badge, nav
-  icons, wallet logos, token logos).
+| Token | Value |
+|---|---|
+| Background | `#04090e` |
+| Sidebar | `#060c12` |
+| Surfaces | `#081018`, `#0f1720`, `#0e212f` |
+| Lines | `#121c26`, `#1b2733` |
+| Ink, muted, faint | `#eff1f4`, `#8799a8`, `#53626f` |
+| Steel, silver | `#6e9fcb`, `#c0c9ce` |
+| Entry | `#4baefb` |
+| Good, bad, warn | `#3ecf8e`, `#ff4566`, `#fdb529` |
+| Brand gradient | `#0c1c2a` → `#24496b` → `#4f7ea6` → `#c3cbd2` |
+
+- Square corners. Inter for text, Geist Mono for addresses and hashes.
+- Primary action is a silver button; one per view.
+- Brand mark, wordmark, verified badge, nav icons, wallet logos and token logos live in
+  `apps/web/public/`.
 - Token prices are candles only: KLineChart for full charts, a small candle strip in tables.
 - Explanations live behind ⓘ tooltips, not paragraphs under inputs.
 - Every page passes `sloplint` (Hallmark) with 0 FAIL before merge.
@@ -51,7 +60,7 @@ Same as the reference app. Dark only.
 
 Overlays: wallet connect, notifications, toast, share call.
 
-### Components agreed in design review
+### Components
 
 - **Call card** (Explore, profile): header with token, pair, side and time left; price now and
   move vs entry; status bar from stop to target with entry tick and live dot; Stop, Entry,
@@ -99,12 +108,10 @@ From `@supercall/core` call status, never recomputed in the browser:
 
 - The extension's card under a post on X (its own ADR).
 - The landing site.
-- Deposits: ADR-0001 says no deposits in v1, so the reference deposit sheet stays out. The top
-  bar shows the USDC balance only.
+- Deposits: ADR-0001 says no deposits in v1. The top bar shows the USDC balance only.
 - Light theme.
 
 ## Consequences
 
 - The API can be built against the screens and states listed here.
 - Screens ship with dummy data and switch to live data one at a time without UI changes.
-- The look stays the reference app's, so the demo matches what reviewers already saw.
