@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 613 20 20" fill="none"><defs><mask id="mask1_28_416" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="26" y="616" width="13" height="14">
+<rect x="26.0005" y="616.687" width="12" height="13" fill="#D9D9D9"></rect>
+</mask></defs><g mask="url(#mask1_28_416)">
+<path d="M29.7778 620.754L26.3837 617.36M34.3033 620.754L37.6974 617.36" stroke-linecap="round" stroke="currentColor"></path>
+<path d="M29.8578 625.485L26.5837 628.76M34.2233 625.485L37.4974 628.76" stroke-linecap="round" stroke="currentColor"></path>
+</g><circle cx="31.9998" cy="623" r="3.2" transform="rotate(-90 31.9998 623)" stroke="currentColor"></circle><circle cx="32" cy="623" r="8" transform="rotate(-90 32 623)" stroke="currentColor"></circle></svg>
