@@ -8,7 +8,8 @@
   },
   "scripts": {
     "typecheck": "tsc",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "assets": "tsx scripts/arc-assets.ts"
   },
   "devDependencies": {
     "@supercall/config": "workspace:*"
