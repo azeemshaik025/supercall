@@ -7,6 +7,7 @@ export {
   type FlashClientOptions,
   FlashError,
 } from './client.ts'
+export { type FillSummary, isTerminal, isWorking, summarizeFills } from './orders.ts'
 export {
   orderFromQuote,
   parseTypedData,
