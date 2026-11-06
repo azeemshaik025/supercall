@@ -9,7 +9,7 @@ import {
   toMicroUsdc,
   toMillionths,
 } from '@supercall/arkiv'
-import { callScore, type Ending, nextScore, type Resolution } from '@supercall/core'
+import { callScore, callWeight, type Ending, nextScore, type Resolution } from '@supercall/core'
 import { type Hex, isHex } from 'viem'
 
 export type SettledCopy = {
@@ -75,6 +75,7 @@ export function settlementRecord({
   fund,
   previous,
   fills,
+  volume = 0,
 }: {
   call: Pick<CallRecord, 'key' | 'caller' | 'entry' | 'stop' | 'target' | 'direction' | 'shareBps'>
   ending: Resolution
@@ -85,6 +86,8 @@ export function settlementRecord({
   fund: { earned: bigint; creditOnly: bigint }
   previous?: Previous
   fills: { filled: number; bought: number; sold: number; definitiveFee: number }
+  /** Copied volume for SuperFactor (core's callVolume). Left out, the call weighs 1. */
+  volume?: number
 }): SettlementPayload {
   const levels = {
     entry: fromMicroUsdc(call.entry),
@@ -95,7 +98,12 @@ export function settlementRecord({
   const s = toMillionths(callScore(levels, scored(ending)))
   const S = previous?.S.after ?? 0
   const W = previous?.W.after ?? 0
-  const next = nextScore({ S: fromMillionths(S), W: fromMillionths(W) }, fromMillionths(s))
+  const score = fromMillionths(s)
+  const next = nextScore(
+    { S: fromMillionths(S), W: fromMillionths(W) },
+    score,
+    callWeight(volume, score),
+  )
   const before = previous ? { fund: previous.fund.after, need: previous.need.after } : NONE
   const { toCaller, toFund, toCreditOnly, toTreasury } = payouts(
     copies,

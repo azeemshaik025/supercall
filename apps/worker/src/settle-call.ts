@@ -28,6 +28,7 @@ import {
 } from './read.ts'
 import { settlementRecord } from './record.ts'
 import { createSettler } from './settle.ts'
+import { otherCallersCopied, scoredVolume } from './volume.ts'
 import { cancelCopies } from './watch.ts'
 
 type Orders = Awaited<ReturnType<typeof ordersOf>>
@@ -261,6 +262,18 @@ export async function settleCall(w: Worker, call: Hex, round?: Round) {
       amounts.reduce((t, a) => t + Number(a ?? 0), 0)
     const buys = copies.flatMap((c) => c.orders?.buy.fills ?? [])
     const sells = copies.flatMap((c) => c.orders?.exits.flatMap((e) => e.fills) ?? [])
+    const filledCopies = onHisaab.map((c, i) => ({
+      follower: c.follower,
+      filledUsd: usd((copies[i]?.orders?.buy.fills ?? []).map((f) => f.notional)),
+    }))
+    const otherCallers = await otherCallersCopied(
+      db,
+      arkiv,
+      filledCopies.map((c) => c.follower),
+      call,
+      record.caller,
+    )
+    const volume = scoredVolume(filledCopies, otherCallers)
     const settledCopies = settled.copies.map((s, i) => ({
       keptFee: inputs.kind === 'right' ? (inputs.kept[i] ?? 0n) : 0n,
       newCredit: s.newCredit,
@@ -289,6 +302,7 @@ export async function settleCall(w: Worker, call: Hex, round?: Round) {
           sold: usd(sells.map((f) => f.notional)),
           definitiveFee: usd([...buys, ...sells].map((f) => f.tradeFeeNotional)),
         },
+        volume,
       }),
     )
     await shown(w, record.caller, written.key)
