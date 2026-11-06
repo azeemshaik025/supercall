@@ -8,6 +8,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IPermit2} from "./interfaces/IPermit2.sol";
 
 /// @notice USDC fee escrow, caller funds, and non-withdrawable follower credit.
@@ -74,6 +75,18 @@ contract Hisaab is Ownable2Step, Pausable, ReentrancyGuard {
         bytes32 inputs;
     }
 
+    /// @dev A caller's public record, kept by the contract from what it settles. Endings count when
+    /// a call is Done; an expired call counts as refunded. Volumes are copy sizes in USDC units.
+    struct CallerStats {
+        uint32 right;
+        uint32 aboveEntry;
+        uint32 wrong;
+        uint32 refunded;
+        uint128 filledVolume;
+        uint128 wrongVolume;
+        uint128 keptFees;
+        uint128 creditPaid;
+    }
     struct Payout {
         uint256 cashBack;
         uint256 creditBack;
@@ -92,6 +105,7 @@ contract Hisaab is Ownable2Step, Pausable, ReentrancyGuard {
     mapping(bytes32 => CopyInfo[]) private _copies;
     mapping(bytes32 => uint256) public earnedFund;
     mapping(bytes32 => uint256) public creditOnlyFund;
+    mapping(bytes32 => CallerStats) private _callerStats;
     mapping(address => uint256) public creditBalance;
     mapping(address => uint256) public owed;
     uint256 public creditReserve;
@@ -137,6 +151,8 @@ contract Hisaab is Ownable2Step, Pausable, ReentrancyGuard {
     event CreditSetAside(bytes32 indexed call, uint256 fromCreditOnly, uint256 fromEarned);
     event CreditReturned(bytes32 indexed call, uint256 toCreditOnly, uint256 toEarned);
     event Expired(bytes32 indexed call, uint256 cursor);
+    /// @dev A call of this caller's reached Done; read the new totals with callerStats.
+    event CallerStatsChanged(bytes32 indexed caller);
     event PayoutOwed(address indexed to, uint256 amount);
     event Claimed(address indexed to, uint256 amount);
     event WriterReplaced(address indexed previousWriter, address indexed newWriter);
@@ -376,6 +392,21 @@ contract Hisaab is Ownable2Step, Pausable, ReentrancyGuard {
         creditReserve += credit;
         emit CopySettled(callId, index, copy.follower,
             payout.cashBack, payout.creditBack, payout.newCredit);
+        _tally(info.caller, ending, copy.size, result, payout.newCredit);
+    }
+
+    function _tally(
+        bytes32 caller, Ending ending, uint256 size, Result memory result, uint256 newCredit
+    ) private {
+        if (ending == Ending.Refund) return;
+        CallerStats storage stats = _callerStats[caller];
+        if (result.filled) stats.filledVolume += SafeCast.toUint128(size);
+        if (ending == Ending.Wrong) {
+            if (result.filled) stats.wrongVolume += SafeCast.toUint128(size);
+            stats.creditPaid += SafeCast.toUint128(newCredit);
+        } else {
+            stats.keptFees += SafeCast.toUint128(result.keptFee);
+        }
     }
 
     function _addKept(
@@ -427,6 +458,18 @@ contract Hisaab is Ownable2Step, Pausable, ReentrancyGuard {
     function _finish(bytes32 callId, CallInfo storage info) private {
         _returnCredit(callId, info);
         info.status = Status.Done;
+        CallerStats storage stats = _callerStats[info.caller];
+        if (info.expired || info.ending == Ending.Refund) ++stats.refunded;
+        else if (info.ending == Ending.Right) ++stats.right;
+        else if (info.ending == Ending.AboveEntry) ++stats.aboveEntry;
+        else ++stats.wrong;
+        emit CallerStatsChanged(info.caller);
+    }
+
+    /// @notice A caller's record as this contract settled it: endings, copied volume, kept fees
+    /// and the credit their fund paid to followers.
+    function callerStats(bytes32 caller) external view returns (CallerStats memory) {
+        return _callerStats[caller];
     }
 
     function _returnCredit(bytes32 callId, CallInfo storage info) private {
