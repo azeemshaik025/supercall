@@ -2,7 +2,7 @@ import { AutoRefresh } from '@/components/auto-refresh'
 import { CallCard } from '@/components/call-card'
 import { CallsTable } from '@/components/calls-table'
 import { MarketsRow } from '@/components/markets-row'
-import { PageTitle } from '@/components/ui'
+import { Info, PageTitle } from '@/components/ui'
 import { callerByHandle, getCallers, getCalls, getMarkets, isOpen } from '@/lib/data'
 
 export default async function Explore() {
@@ -29,6 +29,10 @@ export default async function Explore() {
             </svg>
             Boosted top-rated calls
             <span className="text-[13px] font-normal text-muted">SuperFactor 70+</span>
+            <Info
+              label="About boosted calls"
+              text="Only callers with SuperFactor 70+ can boost, by giving up part of their cut. Followers’ protection is unchanged."
+            />
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
             {boosted.map((c) => (

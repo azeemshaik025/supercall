@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { pct, price } from '@/lib/format'
 import type { Market } from '@/lib/types'
-import { cx, TokenIcon } from './ui'
+import { cx, Info, TokenIcon } from './ui'
 
 /** The coins calls can be made on, with prices from Definitive Flash. */
 export function MarketsRow({ markets }: { markets: Market[] }) {
@@ -9,7 +9,14 @@ export function MarketsRow({ markets }: { markets: Market[] }) {
     <section aria-label="Markets" className="space-y-3">
       <div className="flex items-baseline justify-between">
         <h2 className="text-[15px] font-medium">Tradeable on Arc</h2>
-        <span className="text-[12px] text-muted">Prices from Definitive Flash</span>
+        <span className="flex items-center gap-1.5 text-[12px] text-muted">
+          Prices from Definitive Flash
+          <Info
+            label="Where these numbers come from"
+            align="right"
+            text="Price and liquidity from Definitive Flash. Candles, logo and 24h change from the coin’s deepest pool on Arc. “$1k moves price” is how far a $1,000 buy would push it."
+          />
+        </span>
       </div>
       {markets.length === 0 ? (
         <p className="surface-card px-4 py-10 text-center text-[13px] text-muted">
