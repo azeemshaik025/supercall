@@ -8,6 +8,7 @@ declare module "wxt/browser" {
     | "/auth.html"
     | "/background.js"
     | "/content-scripts/content.js"
+    | "/dither.svg"
     | "/icon-light/128.png"
     | "/icon-light/16.png"
     | "/icon-light/32.png"
