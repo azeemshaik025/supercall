@@ -1,0 +1,25 @@
+{
+  "name": "@supercall/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --import tsx src/index.ts",
+    "dev": "node --import tsx --env-file=.env src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@supercall/arkiv": "workspace:*",
+    "@supercall/chains": "workspace:*",
+    "@supercall/core": "workspace:*",
+    "@supercall/db": "workspace:*",
+    "@supercall/flash": "workspace:*",
+    "viem": "^2.31.3"
+  },
+  "devDependencies": {
+    "@supercall/config": "workspace:*",
+    "tsx": "^4.20.3",
+    "vitest": "^3.2.4"
+  }
+}
