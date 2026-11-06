@@ -2,27 +2,36 @@
    these can't leak out. The app's palette (apps/web/app/globals.css); light when X is light. */
 :host {
   display: block;
-  --night: #04090e;
-  --surface: #0b131b;
-  --surface-2: #111b25;
-  --edge: #1b2733;
-  --ink: #eff1f4;
-  --muted: #8799a8;
-  --faint: #53626f;
-  --good: #3ecf8e;
-  --bad: #ff4566;
-  --warn: #f5b54a;
+  /* X's own palette, so the card reads as part of the post: lights out by default. */
+  --night: #000000;
+  --surface: transparent;
+  --surface-2: #16181c;
+  --edge: #2f3336;
+  --ink: #e7e9ea;
+  --muted: #71767b;
+  --faint: #536471;
+  --good: #00ba7c;
+  --bad: #f4212e;
+  --warn: #ffd400;
+}
+:host([data-theme="dim"]) {
+  --night: #15202b;
+  --surface-2: #1e2732;
+  --edge: #38444d;
+  --ink: #f7f9f9;
+  --muted: #8b98a5;
+  --faint: #5c6e7e;
 }
 :host([data-theme="light"]) {
   --night: #ffffff;
-  --surface: #ffffff;
-  --surface-2: #f5f8fa;
-  --edge: #e1e8ed;
+  --surface: transparent;
+  --surface-2: #f7f9f9;
+  --edge: #eff3f4;
   --ink: #0f1419;
   --muted: #536471;
   --faint: #8b98a5;
-  --good: #00a36c;
-  --bad: #e0245e;
+  --good: #00ba7c;
+  --bad: #f4212e;
   --warn: #c77700;
 }
 
@@ -45,14 +54,14 @@
 .sc-card,
 .sc-note {
   box-sizing: border-box;
-  margin: 4px 16px 12px;
+  margin: 0;
   color: var(--ink);
 }
 
+/* Flat under the post, like X's own sections: no box, one rule below. */
 .sc-card {
-  padding: 14px 16px 16px;
-  border: 1px solid var(--edge);
-  border-radius: 16px;
+  padding: 12px 16px 16px;
+  border-bottom: 1px solid var(--edge);
   background: var(--surface);
 }
 
@@ -441,6 +450,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid var(--edge);
   color: var(--muted);
   font-size: 13px;
   line-height: 18px;
