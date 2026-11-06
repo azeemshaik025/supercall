@@ -162,6 +162,67 @@ export const hisaabAbi = [
   },
   {
     type: 'function',
+    name: 'callerStats',
+    inputs: [
+      {
+        name: 'caller',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        internalType: 'struct Hisaab.CallerStats',
+        components: [
+          {
+            name: 'right',
+            type: 'uint32',
+            internalType: 'uint32',
+          },
+          {
+            name: 'aboveEntry',
+            type: 'uint32',
+            internalType: 'uint32',
+          },
+          {
+            name: 'wrong',
+            type: 'uint32',
+            internalType: 'uint32',
+          },
+          {
+            name: 'refunded',
+            type: 'uint32',
+            internalType: 'uint32',
+          },
+          {
+            name: 'filledVolume',
+            type: 'uint128',
+            internalType: 'uint128',
+          },
+          {
+            name: 'wrongVolume',
+            type: 'uint128',
+            internalType: 'uint128',
+          },
+          {
+            name: 'keptFees',
+            type: 'uint128',
+            internalType: 'uint128',
+          },
+          {
+            name: 'creditPaid',
+            type: 'uint128',
+            internalType: 'uint128',
+          },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'checkFingerprint',
     inputs: [
       {
@@ -913,6 +974,19 @@ export const hisaabAbi = [
   },
   {
     type: 'event',
+    name: 'CallerStatsChanged',
+    inputs: [
+      {
+        name: 'caller',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
     name: 'Claimed',
     inputs: [
       {
@@ -1433,6 +1507,22 @@ export const hisaabAbi = [
     type: 'error',
     name: 'RenounceDisabled',
     inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'SafeCastOverflowedUintDowncast',
+    inputs: [
+      {
+        name: 'bits',
+        type: 'uint8',
+        internalType: 'uint8',
+      },
+      {
+        name: 'value',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
   },
   {
     type: 'error',
