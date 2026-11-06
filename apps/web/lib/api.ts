@@ -1,7 +1,40 @@
 import type { z } from 'zod'
 import type { callResponse, callerResponse, callsResponse, callersResponse } from '@supercall/api-schema'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+export const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+
+// --- Client-side: authenticated requests (Privy token) ---
+
+export class ApiError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+    readonly status: number,
+  ) {
+    super(message)
+  }
+}
+
+export async function api<T>(
+  path: string,
+  { token, method = 'GET', body }: { token?: string | null; method?: string; body?: unknown } = {},
+): Promise<T> {
+  const res = await fetch(`${API}${path}`, {
+    method,
+    headers: {
+      ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+  const json = (await res.json().catch(() => ({}))) as { code?: string; detail?: string }
+  if (!res.ok) {
+    throw new ApiError(json.code ?? `http_${res.status}`, json.detail ?? res.statusText, res.status)
+  }
+  return json as T
+}
+
+// --- Server-side: typed data fetching (ISR-cached, no auth) ---
 
 export type ApiCall = z.infer<typeof callResponse>
 export type ApiCaller = z.infer<typeof callerResponse>
