@@ -70,3 +70,48 @@ export type Score = {
   S: number
   W: number
 }
+
+export interface Caller {
+  handle: string
+  displayName: string
+  xHandle: string
+  verified: boolean
+  superFactor: number
+  lastTen: Outcome[]
+  callCount: number
+  poolUsd: number
+  earnedUsd: number
+  returnedToFollowersUsd: number
+  followersNetUsd: number
+  followersProfitablePct: number
+  joinedAt: string
+}
+
+export interface Call {
+  id: string
+  caller: string
+  asset: string
+  assetAddress?: string
+  quote: string
+  chain: string
+  type: CallType
+  direction: Direction
+  entry: number
+  bandPct: number
+  stop: number
+  target: number
+  price: number
+  status: CallStatus
+  thesis: string
+  createdAt: string
+  entryFilledAt?: string
+  expiresAt: string
+  arkivKey: string
+  callerTradedDuringCall?: boolean
+  stopSuggested?: boolean
+  supercall?: boolean
+  followBand: Band
+  opposeBand: Band
+  shareApplied: number
+  boost?: number
+}

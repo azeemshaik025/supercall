@@ -19,10 +19,10 @@ describe('entries', () => {
   })
 
   it('suggested stop: as far past entry as target, at most 10%', () => {
-    expect(suggestedStop(3000, 3400)).toBe(2700)
+    expect(suggestedStop({ direction: 'long', entry: 3000, target: 3400 })).toBe(2700)
   })
 
   it('suggested stop capped at 10% for large targets', () => {
-    expect(suggestedStop(3000, 4000)).toBe(2700)
+    expect(suggestedStop({ direction: 'long', entry: 3000, target: 4000 })).toBe(2700)
   })
 })
