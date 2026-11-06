@@ -1,0 +1,863 @@
+{
+  "model": "claude-sonnet-5",
+  "cases": {
+    "1": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "3 days"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": "The reading correctly captures entry, stop, target, and the 3-day deadline computed from the post time."
+      }
+    },
+    "2": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "ETH to 3,400",
+          "entry": null,
+          "stop": null,
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "in 24h"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": "Reading matches the post: long ETH target 3,400 with deadline 24h from post time, entry filled from post price."
+      }
+    },
+    "5": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "no-target",
+          "detail": "The post gives a breakout entry level of 3,100 but no target price is stated."
+        }
+      }
+    },
+    "8": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "holds-a-level",
+          "detail": "The post only states ETH staying above 3,000 with no target price given."
+        }
+      }
+    },
+    "11": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "leverage",
+          "detail": "The post sets 10x leverage on a long ETH position, which disqualifies it as a scoreable call."
+        }
+      }
+    },
+    "12": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Buy",
+          "entry": {
+            "low": {
+              "value": 2950,
+              "unit": "usd",
+              "words": "2,950"
+            },
+            "high": {
+              "value": 3000,
+              "unit": "usd",
+              "words": "3,000"
+            }
+          },
+          "stop": null,
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "13": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": null,
+          "stop": null,
+          "targets": [
+            {
+              "value": 3200,
+              "unit": "usd",
+              "words": "3,200"
+            },
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "14": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Buy if ETH breaks",
+          "entry": {
+            "value": 3100,
+            "unit": "usd",
+            "words": "3,100"
+          },
+          "stop": null,
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "15": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "short",
+          "directionWords": "Short",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": null,
+          "targets": [
+            {
+              "value": 2700,
+              "unit": "usd",
+              "words": "2,700"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "16": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "coin-vs-coin",
+          "detail": "The post predicts ETH outperforming BTC via the ETH/BTC ratio, not a USD price target."
+        }
+      }
+    },
+    "17": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "news",
+          "detail": "Post predicts an ETF approval event, not a price target."
+        }
+      }
+    },
+    "18": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "leverage",
+          "detail": "Post specifies 10x leverage, which disqualifies it as a scorable call."
+        }
+      }
+    },
+    "20": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "no-direction",
+          "detail": "The post lists two possible price levels for ETH without stating whether it's a long or short direction."
+        }
+      }
+    },
+    "21": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "no-target",
+          "detail": "Post gives an entry price of 3,000 but no separate target price."
+        }
+      }
+    },
+    "22": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "no-deadline",
+          "detail": "The post gives entry, stop, and target but no time words for a deadline."
+        }
+      }
+    },
+    "23": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": null,
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "24": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "today"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "25": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": "All fields match the post correctly, and the deadline is accurately computed as 7 days from the post time for 'this week'."
+      }
+    },
+    "26": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "this month"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "27": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "in 24h"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "28": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "Friday"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "29": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "tomorrow"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "30": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "soon"
+        }
+      }
+    },
+    "31": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "by Oct 20"
+        }
+      }
+    },
+    "32": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "joke",
+          "detail": "Caller explicitly says 'Kidding' and states they aren't actually taking the trade."
+        }
+      }
+    },
+    "33": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "sarcasm",
+          "detail": "The 'and I'm the Pope' line signals the caller is mocking the prediction, not making a real call."
+        }
+      }
+    },
+    "34": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "two-coins",
+          "detail": "The post calls both ETH and BTC together, not a single coin."
+        }
+      }
+    },
+    "35": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 2850,
+            "unit": "usd",
+            "words": "2,850"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "36": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "ETH to 3.4k",
+          "entry": null,
+          "stop": null,
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3.4k"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": "The reading correctly captures coin, direction, target, and a 7-day deadline from the Monday 14:00 UTC post time."
+      }
+    },
+    "37": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": -5,
+            "unit": "percent",
+            "words": "-5%"
+          },
+          "targets": [
+            {
+              "value": 10,
+              "unit": "percent",
+              "words": "+10%"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "38": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": null,
+          "stop": null,
+          "targets": [
+            {
+              "value": 10,
+              "unit": "percent",
+              "words": "+10%"
+            }
+          ],
+          "deadlineWords": "today"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "39": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "BTC",
+          "coinWords": "BTC",
+          "direction": "long",
+          "directionWords": "BTC to 110k",
+          "entry": null,
+          "stop": null,
+          "targets": [
+            {
+              "value": 110000,
+              "unit": "usd",
+              "words": "110k"
+            }
+          ],
+          "deadlineWords": "by Friday"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "40": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "two-readings",
+          "detail": "The stop loss is given as two possible values (2,800 or 2,850), making it ambiguous which level applies."
+        }
+      }
+    },
+    "41": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3000,
+            "unit": "usd",
+            "words": "3,000"
+          },
+          "stop": {
+            "value": 3100,
+            "unit": "usd",
+            "words": "3,100"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      }
+    },
+    "42": {
+      "reader": {
+        "answer": {
+          "verdict": "call",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "direction": "long",
+          "directionWords": "Long",
+          "entry": {
+            "value": 3100,
+            "unit": "usd",
+            "words": "3,100"
+          },
+          "stop": {
+            "value": 2950,
+            "unit": "usd",
+            "words": "2,950"
+          },
+          "targets": [
+            {
+              "value": 3400,
+              "unit": "usd",
+              "words": "3,400"
+            }
+          ],
+          "deadlineWords": "this week"
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": ""
+      }
+    },
+    "43": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "someone-elses-call",
+          "detail": "This is a retweet (RT) of another trader's call, not the poster's own prediction."
+        }
+      }
+    },
+    "44": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "past-trade",
+          "detail": "Reports a completed trade from entry 2,900 to exit 3,100 already done yesterday, not a forward-looking call."
+        }
+      }
+    },
+    "46": {
+      "reader": {
+        "answer": {
+          "verdict": "close",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "closeWords": "Took profit on ETH here, I'm out."
+        }
+      },
+      "reviewer": {
+        "agrees": true,
+        "problem": null,
+        "detail": "The post clearly states a completed close ('Took profit... I'm out.') on ETH, matching the single coin mentioned, with no ambiguity in direction or timing."
+      }
+    },
+    "47": {
+      "reader": {
+        "answer": {
+          "verdict": "not-a-call",
+          "reason": "not-a-close",
+          "detail": "The caller only muses about possibly taking profit soon, not an actual close of a position now."
+        }
+      }
+    },
+    "48": {
+      "reader": {
+        "answer": {
+          "verdict": "close",
+          "coin": "ETH",
+          "coinWords": "ETH",
+          "closeWords": "Closing my ETH here"
+        }
+      }
+    }
+  }
+}
