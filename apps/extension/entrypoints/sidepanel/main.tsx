@@ -1,6 +1,6 @@
 // The side panel: sign in with Privy, see the wallet, and copy the call a card's Copy picked.
 import { PrivyProvider, useCreateWallet, usePrivy, useWallets } from '@privy-io/react-auth'
-import { CHAIN } from '@supercall/chains'
+import { ARC_TESTNET, CHAIN, viemChain } from '@supercall/chains'
 import { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderSVG } from 'uqr'
@@ -15,28 +15,48 @@ import type { Message } from '../background'
 declare const __API_URL__: string
 declare const __WEB_ORIGIN__: string
 
-const client = createPublicClient({ chain: arc, transport: http() })
+// The same address on both: testnet, where Hisaab holds fees and the faucet pays out, and mainnet,
+// where Flash trades.
+const networks = {
+  testnet: createPublicClient({ chain: viemChain(ARC_TESTNET), transport: http() }),
+  mainnet: createPublicClient({ chain: arc, transport: http() }),
+}
+/** How often balances are read again while the panel is open. */
+const REFRESH_MS = 15_000
 const usd = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
 
-/** The wallet's USDC on Arc, or undefined until it's read. */
-function useUsdc(wallet: string | undefined) {
-  const [balance, setBalance] = useState<number>()
+/** The wallet's USDC on one Arc network, read again on `tick` and every 15 seconds. */
+function useUsdc(wallet: string | undefined, network: keyof typeof networks, tick: number) {
+  const [balance, setBalance] = useState<number | null>()
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tick is the reload button asking to read again
   useEffect(() => {
     if (!wallet) return
-    client
-      .readContract({
-        address: CHAIN.usdc.address,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [wallet as `0x${string}`],
-      })
-      .then(
-        (b) => setBalance(fromMicro(b)),
-        () => setBalance(undefined),
-      )
-  }, [wallet])
+    let live = true
+    const read = () =>
+      networks[network]
+        .readContract({
+          address: CHAIN.usdc.address,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [wallet as `0x${string}`],
+        })
+        .then(
+          (b) => live && setBalance(fromMicro(b)),
+          (error: unknown) => {
+            console.warn(`Supercall ${network} balance failed`, error)
+            if (live) setBalance(null)
+          },
+        )
+    setBalance(undefined)
+    void read()
+    const timer = setInterval(read, REFRESH_MS)
+    return () => {
+      live = false
+      clearInterval(timer)
+    }
+  }, [wallet, network, tick])
   return balance
 }
 
@@ -147,10 +167,13 @@ function AddFunds({ address }: { address: string }) {
   )
 }
 
-function Account() {
+function Account({ tick }: { tick: number }) {
   const { user, logout } = usePrivy()
   const { address, creating } = useWallet()
-  const balance = useUsdc(address)
+  const testnet = useUsdc(address, 'testnet', tick)
+  const mainnet = useUsdc(address, 'mainnet', tick)
+  const shown = (b: number | null | undefined) =>
+    !address ? '–' : b === undefined ? '…' : b === null ? 'Unavailable' : usd(b)
   const [showFunds, setShowFunds] = useState(false)
   const name = user?.twitter?.username ? `@${user.twitter.username}` : (user?.email?.address ?? '')
   return (
@@ -189,8 +212,12 @@ function Account() {
           </dd>
         </div>
         <div>
-          <dt>USDC on Arc</dt>
-          <dd className="sc-mono">{!address ? '–' : balance === undefined ? '…' : usd(balance)}</dd>
+          <dt>USDC · Arc testnet</dt>
+          <dd className="sc-mono">{shown(testnet)}</dd>
+        </div>
+        <div>
+          <dt>USDC · Arc mainnet</dt>
+          <dd className="sc-mono">{shown(mainnet)}</dd>
         </div>
       </dl>
       {address && showFunds && <AddFunds address={address} />}
@@ -265,6 +292,7 @@ function Copy({ id, call }: { id: string; call: Call | null | undefined }) {
 
 function Panel() {
   const { ready, authenticated } = usePrivy()
+  const [tick, setTick] = useState(0)
   const pending = usePending()
   const call = useCall(pending)
   useEffect(() => {
@@ -282,13 +310,31 @@ function Panel() {
           <img src="/icon-light/32.png" alt="" />
           Supercall
         </span>
-        <span className="sc-chip">Arc testnet</span>
+        <span className="sc-tools">
+          <span className="sc-chip">Arc</span>
+          <button
+            type="button"
+            className="sc-icon"
+            title="Reload balances"
+            aria-label="Reload balances"
+            onClick={() => setTick((t) => t + 1)}
+          >
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path
+                d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v2.8h-2.8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+            </svg>
+          </button>
+        </span>
       </header>
       <div className="sc-body">
         {!ready ? (
           <p className="sc-muted">Loading…</p>
         ) : authenticated ? (
-          <Account />
+          <Account tick={tick} />
         ) : (
           <>
             <div className="sc-hero">

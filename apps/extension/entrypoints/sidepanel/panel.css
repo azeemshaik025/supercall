@@ -267,3 +267,8 @@ body {
   font-size: 12px;
   word-break: break-all;
 }
+.sc-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
