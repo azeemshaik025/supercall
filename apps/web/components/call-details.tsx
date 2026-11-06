@@ -16,9 +16,7 @@ export function CallDetails({ call }: { call: Call }) {
     {
       done: Boolean(call.entryFilledAt),
       title: 'Entry filled',
-      sub: call.entryFilledAt
-        ? shortDate(call.entryFilledAt)
-        : 'Waiting for the entry price',
+      sub: call.entryFilledAt ? shortDate(call.entryFilledAt) : 'Waiting for the entry price',
     },
     {
       done: ended,
@@ -64,11 +62,17 @@ export function CallDetails({ call }: { call: Call }) {
               >
                 {s.done ? '✓' : ''}
               </span>
-              <span className="flex flex-col gap-0.5">
+              <span className="flex min-w-0 flex-col gap-0.5">
                 <span className={cx('text-[13px]', s.done ? 'font-medium' : 'text-silver')}>
                   {s.title}
                 </span>
-                <span className={cx('text-[12px] text-muted', s.mono && 'font-mono text-steel')}>
+                <span
+                  title={s.mono ? s.sub : undefined}
+                  className={cx(
+                    'text-[12px] text-muted',
+                    s.mono && 'font-mono break-all text-steel',
+                  )}
+                >
                   {s.sub}
                 </span>
               </span>
