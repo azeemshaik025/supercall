@@ -12,6 +12,7 @@ import {
 } from 'klinecharts'
 import { useEffect, useRef, useState } from 'react'
 import type { Candle } from '@/lib/types'
+import { DrawBar } from './draw-bar'
 
 export type Level = 'target' | 'entry' | 'stop'
 export type Levels = Record<Level, number>
@@ -271,6 +272,7 @@ export function CandleChart({
   precision = 2,
   pick = null,
   onPicked,
+  tools = false,
 }: {
   candles: Candle[]
   levels?: Levels
@@ -288,6 +290,8 @@ export function CandleChart({
   pick?: Level | null
   /** After a pick lands, so the form can drop the picking state. */
   onPicked?: () => void
+  /** Shows the drawing toolbar beside the chart. */
+  tools?: boolean
 }) {
   const box = useRef<HTMLDivElement>(null)
   const chartRef = useRef<Chart | null>(null)
@@ -536,7 +540,14 @@ export function CandleChart({
     }
   }, [pick, built])
 
-  return (
+  const canvas = (
     <div ref={box} role="img" aria-label={label} style={{ height }} className="w-full min-w-0" />
+  )
+  if (!tools) return canvas
+  return (
+    <div className="flex min-w-0" style={{ height }}>
+      <DrawBar chart={built ? chartRef.current : null} />
+      <div className="min-w-0 flex-1">{canvas}</div>
+    </div>
   )
 }
