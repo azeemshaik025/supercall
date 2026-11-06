@@ -29,6 +29,8 @@ export const ARC: ChainConfig = {
   native: { symbol: 'USDC', decimals: 18 },
   usdc: { address: '0x3600000000000000000000000000000000000000', decimals: 6 },
   permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
+  hisaab: '0x5c84C738df115558CDDAeEE6d54f8d40dfbaf249',
+  hisaabBlock: 29848844,
   tradeable: [
     { symbol: 'WETH', address: '0x128cc466b61f542da60c70e3aa11c10e19b84edb', decimals: 18 },
     { symbol: 'cirBTC', address: '0x171A4217b86A807A64eB94757Db6849fb4bDbAA0', decimals: 8 },
