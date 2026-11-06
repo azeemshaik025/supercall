@@ -3,7 +3,7 @@
 import { usePrivy } from '@privy-io/react-auth'
 import { MIN_TARGET_DISTANCE } from '@supercall/core'
 import Link from 'next/link'
-import { type CSSProperties, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import { ApiError } from '@/lib/api'
 import { COPY_STEP, type Copied, type CopyStep, orderState, useCopies, useCopy } from '@/lib/copy'
 import { statusLabel } from '@/lib/data'
@@ -85,6 +85,12 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
   const [bought, setBought] = useState<(Copied & { size: number }) | null>(null)
   const [step, setStep] = useState<CopyStep | null>(null)
   const [error, setError] = useState<string>()
+  // Opened from the extension: the side panel tracks the order, so the window closes itself.
+  useEffect(() => {
+    if (!popup || !bought) return
+    const t = setTimeout(() => window.close(), 2500)
+    return () => clearTimeout(t)
+  }, [popup, bought])
   const size =
     pctOfBalance === null ? Number(typed.replace(/,/g, '')) || 0 : (balance * pctOfBalance) / 100
   const fill = pctOfBalance ?? Math.min(100, balance > 0 ? (size / balance) * 100 : 0)
