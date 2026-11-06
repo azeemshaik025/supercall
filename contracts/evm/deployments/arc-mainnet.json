@@ -2,18 +2,18 @@
   "network": "Arc",
   "chainId": 5042,
   "contract": "Hisaab",
-  "address": "0x5c84C738df115558CDDAeEE6d54f8d40dfbaf249",
-  "deployTx": "0xd5a7152f25f776e7d8aa5bb746d1a5b8312969addce8b400e10763ed5c1a4c6f",
+  "address": "0x79Ce4b6CB5ccA888Df653E1cd51cD1B2241A56CE",
+  "deployTx": "0x093dce9062b9afde1095e984f36f026980108b6bbe7b37934949255b9c2e13b3",
   "deployedAt": "2026-11-06T00:00:00.000Z",
-  "block": 29848844,
-  "gasUsed": 3183700,
-  "gasCost": "0.0636771837 ETH",
+  "block": 29852037,
+  "gasUsed": 2888230,
+  "gasCost": "0.0577679214645 ETH",
   "constructor": {
     "usdc": "0x3600000000000000000000000000000000000000",
     "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-    "owner": "0x2E62915D195e790701a0fb4Ef0C9BFA0e84BbB54",
-    "writer": "0x2E62915D195e790701a0fb4Ef0C9BFA0e84BbB54",
+    "owner": "0x69C9Fb11006788a118520eD66518a666c0cf0772",
+    "writer": "0x69C9Fb11006788a118520eD66518a666c0cf0772",
     "settler": "0x59B6D1d967bdf035E3849f244063c3F61411A0dE",
-    "treasury": "0x2E62915D195e790701a0fb4Ef0C9BFA0e84BbB54"
+    "treasury": "0x69C9Fb11006788a118520eD66518a666c0cf0772"
   }
 }
