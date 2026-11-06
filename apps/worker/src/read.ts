@@ -73,17 +73,26 @@ export async function priceBefore(
   throw new Error(`no swap in the pool between blocks ${floor} and ${from - 1n}`)
 }
 
-export async function registeredCalls(arc: PublicClient, hisaab: Hex, from: bigint, to: bigint) {
-  const logs = await paged(from, to, (fromBlock, toBlock) =>
-    arc.getContractEvents({
+export async function registeredCalls(
+  arc: PublicClient,
+  hisaab: Hex,
+  from: bigint,
+  to: bigint,
+  log?: (e: Record<string, unknown>) => void,
+) {
+  let page = 0
+  const logs = await paged(from, to, (fromBlock, toBlock) => {
+    page++
+    log?.({ event: 'round:page', page, from: Number(fromBlock), to: Number(toBlock) })
+    return arc.getContractEvents({
       address: hisaab,
       abi: hisaabAbi,
       eventName: 'CallRegistered',
       fromBlock,
       toBlock,
       strict: true,
-    }),
-  )
+    })
+  })
   return logs.flatMap((l) => (l.eventName === 'CallRegistered' ? [l.args.call] : []))
 }
 

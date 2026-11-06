@@ -21,9 +21,10 @@ export function createLoop(
     log({ event: 'round:rpc', step: 'getBlockNumber' })
     const to = await arc.getBlockNumber()
     log({ event: 'round:rpc', step: 'registeredCalls', from: Number(from), to: Number(to), pages: Math.ceil(Number(to - from) / 10000) })
-    const calls = await registeredCalls(arc, w.chain.hisaab, from, to)
+    const calls = await registeredCalls(arc, w.chain.hisaab, from, to, log)
     if (!calls.length) return log({ event: 'round', calls: 0 })
 
+    log({ event: 'round:rpc', step: 'closesOf', calls: calls.length })
     const closeList = await w.arkiv.closesOf(calls)
     const closes = new Map(closeList.map((c) => [c.call, c]))
     const voided = await w.db.query.voids.findMany({
