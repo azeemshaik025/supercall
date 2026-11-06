@@ -333,7 +333,9 @@ export function createArkiv({
                 asset: call.asset,
               },
               expiration: ExpirationTime.atDate(new Date((call.deadline + 30 * DAY) * 1000)),
-              flags: { readonly: true },
+              // Burned, so no one can edit it; permissionlessExtension lets anyone pay to keep it
+              // alive past Rabdi's cap without regaining write access (arkiv/friction.md).
+              flags: { readonly: true, permissionlessExtension: true },
               salt: next.salt,
             },
           ],
@@ -362,7 +364,7 @@ export function createArkiv({
                 caller: key(close.caller),
               },
               expiration: ExpirationTime.atDate(new Date((deadline + 30 * DAY) * 1000)),
-              flags: { readonly: true },
+              flags: { readonly: true, permissionlessExtension: true },
               salt: next.salt,
             },
           ],
@@ -403,6 +405,21 @@ export function createArkiv({
       const found = await Promise.all(
         (await find('call', eq('caller', key(callerKey)))).map((e) => asCall(e, () => owner)),
       )
+      return found.flatMap((c) => c ?? [])
+    },
+
+    /** Every call on an asset, across callers. Each caller is looked up once. */
+    async callsByAsset(asset: string) {
+      const entities = await find('call', eq('asset', asset))
+      const seen = new Map<Hex, Promise<CallerRecord | undefined>>()
+      const callerOf = (k: Hex) => {
+        const hit = seen.get(k)
+        if (hit) return hit
+        const looked = caller(k)
+        seen.set(k, looked)
+        return looked
+      }
+      const found = await Promise.all(entities.map((e) => asCall(e, callerOf)))
       return found.flatMap((c) => c ?? [])
     },
 
@@ -450,10 +467,24 @@ export function createArkiv({
       return (await find('status', or(callKeys.map((c) => eq('call', key(c)))))).map(asStatus)
     },
 
-    async statuses({ status, asset }: { status?: CallStatus[]; asset?: string } = {}) {
+    async statuses({
+      status,
+      asset,
+      minSuper,
+      boosted,
+    }: {
+      status?: CallStatus[]
+      asset?: string
+      /** Only calls whose super factor is at least this (0–100). */
+      minSuper?: number
+      /** Only calls the caller boosted. */
+      boosted?: boolean
+    } = {}) {
       const filters = [
         ...(status?.length ? [or(status.map((s) => eq('status', s)))] : []),
         ...(asset ? [eq('asset', asset)] : []),
+        ...(minSuper ? [gt('super_factor', i32(minSuper - 1))] : []),
+        ...(boosted ? [gt('boost_bps', i32(0))] : []),
       ]
       return (await find('status', ...filters)).map(asStatus)
     },

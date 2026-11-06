@@ -19,6 +19,7 @@
     "@supercall/chains": "workspace:*",
     "@supercall/core": "workspace:*",
     "@supercall/db": "workspace:*",
+    "@supercall/flash": "workspace:*",
     "@supercall/identity": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.13",

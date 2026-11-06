@@ -27,3 +27,11 @@ export function keptFee(callFee: number, profit: number, callWorked: boolean) {
 export function loss(size: number, entry: number, exitPrice: number) {
   return -netProfit(size, entry, exitPrice)
 }
+
+const MAX_DEPOSIT_COST = 0.1
+
+export function depositMinimum(inUsd: number, outUsd: number): number | undefined {
+  const cost = inUsd - outUsd
+  if (cost <= inUsd * MAX_DEPOSIT_COST) return undefined
+  return Math.ceil((cost / (MAX_DEPOSIT_COST - 0.01)) * 100) / 100
+}

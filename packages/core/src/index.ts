@@ -17,6 +17,7 @@ export {
 export {
   CALL_FEE_RATE,
   DEFINITIVE_FEE_RATE,
+  depositMinimum,
   fees,
   keptFee,
   loss,

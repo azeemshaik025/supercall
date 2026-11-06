@@ -50,6 +50,9 @@ importers:
       '@supercall/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@supercall/flash':
+        specifier: workspace:*
+        version: link:../../packages/flash
       '@supercall/identity':
         specifier: workspace:*
         version: link:../../packages/identity

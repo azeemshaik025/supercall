@@ -1,0 +1,19 @@
+{
+  "network": "Arc",
+  "chainId": 5042,
+  "contract": "Hisaab",
+  "address": "0x5c84C738df115558CDDAeEE6d54f8d40dfbaf249",
+  "deployTx": "0xd5a7152f25f776e7d8aa5bb746d1a5b8312969addce8b400e10763ed5c1a4c6f",
+  "deployedAt": "2026-11-06T00:00:00.000Z",
+  "block": 29848844,
+  "gasUsed": 3183700,
+  "gasCost": "0.0636771837 ETH",
+  "constructor": {
+    "usdc": "0x3600000000000000000000000000000000000000",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "owner": "0x2E62915D195e790701a0fb4Ef0C9BFA0e84BbB54",
+    "writer": "0x2E62915D195e790701a0fb4Ef0C9BFA0e84BbB54",
+    "settler": "0x59B6D1d967bdf035E3849f244063c3F61411A0dE",
+    "treasury": "0x2E62915D195e790701a0fb4Ef0C9BFA0e84BbB54"
+  }
+}
