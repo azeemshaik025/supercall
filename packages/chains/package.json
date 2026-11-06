@@ -1,0 +1,22 @@
+{
+  "name": "@supercall/chains",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./local-arc": "./src/local-arc.ts"
+  },
+  "scripts": {
+    "abi": "node scripts/hisaab-abi.mjs",
+    "typecheck": "tsc",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "viem": "^2.57.7",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@supercall/config": "workspace:*"
+  }
+}
