@@ -8,6 +8,12 @@ const TICK = 10 * 1000
 
 async function main() {
   const w = workerFromEnv()
+
+  process.on('SIGTERM', () => {
+    console.log(JSON.stringify({ event: 'sigterm' }))
+    w.db.end({ timeout: 5 }).finally(() => process.exit(0))
+  })
+
   const loop = createLoop(w)
   const watch = createWatch(w)
   console.log(JSON.stringify({ event: 'started', settler: w.settler.address }))

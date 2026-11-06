@@ -12,7 +12,13 @@ export function createDb(url = process.env.DATABASE_URL) {
   // DATABASE_POOL_MAX caps connections: a local PGlite runs one query at a time, and queries
   // from several connections at once get mixed up there (dev.sh sets it to 1).
   const max = Number(process.env.DATABASE_POOL_MAX) || undefined
-  return drizzle(postgres(url, { prepare: !url.includes('-pooler'), max }), { schema })
+  const client = postgres(url, {
+    prepare: !url.includes('-pooler'),
+    max,
+    connection: { idle_in_transaction_session_timeout: 120000 },
+  })
+  const db = drizzle(client, { schema })
+  return Object.assign(db, { end: (opts?: { timeout?: number }) => client.end(opts) })
 }
 
 export type Db = ReturnType<typeof createDb>
