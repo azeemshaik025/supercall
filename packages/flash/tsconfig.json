@@ -1,0 +1,5 @@
+{
+  "extends": "@supercall/config/tsconfig.base.json",
+  "include": ["src"],
+  "compilerOptions": { "lib": ["ES2023", "DOM"] }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@supercall/flash",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run --passWithNoTests",
+    "assets": "tsx scripts/arc-assets.ts"
+  },
+  "devDependencies": {
+    "@supercall/config": "workspace:*"
+  }
+}
