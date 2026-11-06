@@ -49,11 +49,11 @@ export function CallerCard({ caller }: { caller: Caller }) {
     >
       <div className="flex items-center gap-2.5">
         <span className="grid size-[34px] place-items-center bg-white/15 font-medium">
-          {caller.name[0]}
+          {caller.displayName[0]}
         </span>
         <span className="flex flex-col">
           <span className="flex items-center gap-1.5 text-[14px] font-medium">
-            {caller.name} {caller.verified && <VerifiedBadge size={13} />}
+            {caller.displayName} {caller.verified && <VerifiedBadge size={13} />}
           </span>
           <span className="text-[12px] text-white/80">@{caller.handle}</span>
         </span>
@@ -67,7 +67,7 @@ export function CallerCard({ caller }: { caller: Caller }) {
       <LastTen outcomes={caller.lastTen} onBrand />
       <span className="text-[13px] text-white/90">
         Followers made {caller.followersNetUsd >= 0 ? '+' : ''}
-        {usdShort(caller.followersNetUsd)} · fund {usdShort(caller.fundUsd)}
+        {usdShort(caller.followersNetUsd)} · fund {usdShort(caller.poolUsd)}
       </span>
       <Link
         href={`/u/${caller.handle}`}

@@ -1,9 +1,9 @@
 import Link from 'next/link'
-import { markets } from '@/lib/data'
 import { pct, price } from '@/lib/format'
+import type { Market } from '@/lib/types'
 import { cx, TokenIcon } from './ui'
 
-export function MarketsRow() {
+export function MarketsRow({ markets }: { markets: Market[] }) {
   return (
     <section aria-label="Markets" className="space-y-3">
       <div className="flex items-baseline justify-between">
@@ -26,10 +26,10 @@ export function MarketsRow() {
               <span
                 className={cx(
                   'text-[12px] font-medium',
-                  m.change24h >= 0 ? 'text-good' : 'text-bad',
+                  (m.change24h ?? 0) >= 0 ? 'text-good' : 'text-bad',
                 )}
               >
-                {pct(m.change24h)}
+                {pct(m.change24h ?? 0)}
               </span>
             </span>
           </Link>

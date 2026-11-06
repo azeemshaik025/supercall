@@ -2,11 +2,10 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { callerByHandle, ENDED, miniCandles, NOW, OPEN, statusLabel } from '@/lib/data'
-import { ago, pct, price, usdShort } from '@/lib/format'
+import { ENDED, OPEN, statusLabel } from '@/lib/data'
+import { ago, pct, price } from '@/lib/format'
 import { moveVsEntry } from '@/lib/money'
-import type { Call } from '@/lib/types'
-import { MiniCandles } from './mini-candles'
+import type { Call, Caller } from '@/lib/types'
 import { cx, Segmented, SideTag, TokenIcon } from './ui'
 
 const FILTERS = ['All', 'Live', 'Upcoming', 'Settled'] as const
@@ -16,14 +15,19 @@ const toneDot = { good: 'bg-good', bad: 'bg-bad', warn: 'bg-warn', faint: 'bg-fa
 
 function matches(f: Filter, c: Call) {
   if (f === 'Live') return c.status === 'live'
-  if (f === 'Upcoming') return c.status === 'posted' || c.status === 'armed'
+  if (f === 'Upcoming') return c.status === 'pending' || c.status === 'armed'
   if (f === 'Settled') return ENDED.includes(c.status)
   return true
 }
 
-export function CallsTable({ calls }: { calls: Call[] }) {
+export function CallsTable({ calls, callers }: { calls: Call[]; callers: Caller[] }) {
   const [filter, setFilter] = useState<Filter>('All')
   const [q, setQ] = useState('')
+  const now = new Date()
+  const callerMap = useMemo(
+    () => new Map(callers.map((c) => [c.handle, c])),
+    [callers],
+  )
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return calls
@@ -73,14 +77,13 @@ export function CallsTable({ calls }: { calls: Call[] }) {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <div className="min-w-[880px]">
-          <div className="grid grid-cols-[minmax(220px,2fr)_1fr_1.3fr_0.8fr_1fr_120px] gap-4 border-y border-line px-4 py-2.5 text-[12px] text-muted">
+        <div className="min-w-[780px]">
+          <div className="grid grid-cols-[minmax(220px,2fr)_1fr_1.3fr_1fr_1fr] gap-4 border-y border-line px-4 py-2.5 text-[12px] text-muted">
             <span>Call</span>
             <span>Price</span>
-            <span>Stop → target</span>
-            <span>Copied</span>
+            <span>Stop &rarr; target</span>
             <span>Status</span>
-            <span>Last 12h</span>
+            <span>Posted</span>
           </div>
           {rows.length === 0 && (
             <p className="px-4 py-10 text-center text-[13px] text-muted">No calls match.</p>
@@ -92,16 +95,16 @@ export function CallsTable({ calls }: { calls: Call[] }) {
               <Link
                 key={c.id}
                 href={`/c/${c.id}`}
-                className="grid grid-cols-[minmax(220px,2fr)_1fr_1.3fr_0.8fr_1fr_120px] items-center gap-4 border-b border-line px-4 py-3.5 hover:bg-surface-2"
+                className="grid grid-cols-[minmax(220px,2fr)_1fr_1.3fr_1fr_1fr] items-center gap-4 border-b border-line px-4 py-3.5 hover:bg-surface-2"
               >
                 <span className="flex min-w-0 items-center gap-3">
                   <TokenIcon symbol={c.asset} size={32} />
                   <span className="flex min-w-0 flex-col gap-1">
                     <span className="flex items-center gap-2 text-[14px] font-medium">
-                      {c.asset} <SideTag long={c.long} />
+                      {c.asset} <SideTag long={c.direction === 'long'} />
                     </span>
                     <span className="text-[12px] text-muted">
-                      @{c.caller} · SF {callerByHandle(c.caller)?.superFactor ?? 50}
+                      @{c.caller} · SF {callerMap.get(c.caller)?.superFactor ?? 50}
                     </span>
                   </span>
                 </span>
@@ -114,15 +117,13 @@ export function CallsTable({ calls }: { calls: Call[] }) {
                 <span className="text-[13px] text-silver">
                   {price(c.stop)} to {price(c.target)}
                 </span>
-                <span className="text-[14px]">{c.copiedUsd ? usdShort(c.copiedUsd) : '—'}</span>
                 <span className="flex flex-col gap-1">
                   <span className="inline-flex items-center gap-1.5 text-[13px] text-silver">
                     <span className={cx('size-1.5 rounded-full', toneDot[st.tone])} />
                     {st.label}
                   </span>
-                  <span className="text-[11px] text-muted">{ago(c.createdAt, NOW)}</span>
                 </span>
-                <MiniCandles candles={miniCandles(c)} label={`${c.asset} last 12 hours`} />
+                <span className="text-[11px] text-muted">{ago(c.createdAt, now)}</span>
               </Link>
             )
           })}

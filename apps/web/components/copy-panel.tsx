@@ -2,14 +2,13 @@
 
 import Link from 'next/link'
 import { type CSSProperties, useState } from 'react'
-import { me } from '@/lib/data'
+import { statusLabel } from '@/lib/data'
 import { price, signedUsd, usd } from '@/lib/format'
 import { estimate, inBand } from '@/lib/money'
 import type { Call } from '@/lib/types'
 import { cx, Info } from './ui'
 
 const STOPS = [0, 25, 50, 75, 100] as const
-/** Below this distance to target a call is scored but can’t be copied. */
 const MIN_TARGET = 0.02
 
 function Lock() {
@@ -68,17 +67,27 @@ function Note({
   )
 }
 
-/** The copy form and every state a call can be in. */
-export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean }) {
+export function CopyPanel({
+  call,
+  balance = 0,
+  popup = false,
+}: {
+  call: Call
+  balance?: number
+  popup?: boolean
+}) {
   const [pctOfBalance, setPct] = useState<number | null>(null)
   const [typed, setTyped] = useState('1,000')
   const [bought, setBought] = useState<number | null>(null)
   const size =
-    pctOfBalance === null ? Number(typed.replace(/,/g, '')) || 0 : (me.balance * pctOfBalance) / 100
-  const fill = pctOfBalance ?? Math.min(100, (size / me.balance) * 100)
+    pctOfBalance === null
+      ? Number(typed.replace(/,/g, '')) || 0
+      : (balance * pctOfBalance) / 100
+  const fill = pctOfBalance ?? Math.min(100, balance > 0 ? (size / balance) * 100 : 0)
   const est = estimate(call, size)
+  const long = call.direction === 'long'
 
-  if (call.status === 'posted' || call.status === 'armed') {
+  if (call.status === 'pending' || call.status === 'armed') {
     return (
       <Shell>
         <Note
@@ -98,31 +107,18 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
     )
   }
   if (call.status !== 'live') {
-    const win = (call.result ?? 0) >= 0
+    const st = statusLabel[call.status]
     return (
       <Shell>
         <div className="flex flex-col gap-1">
           <span className="text-[12px] text-muted">Ended</span>
-          <span
-            className={cx(
-              'text-[36px] font-medium tracking-[-0.03em]',
-              win ? 'text-good' : 'text-bad',
-            )}
-          >
-            {call.result === undefined
-              ? '—'
-              : `${win ? '+' : '−'}${Math.abs(call.result * 100).toFixed(1)}%`}
-          </span>
-          <span className="text-[13px] text-muted">
-            {call.copiers
-              ? `${call.copiers} followers copied. Settled in Hisaab on Arc.`
-              : 'Nobody copied this call.'}
-          </span>
+          <span className="text-[18px] font-medium">{st.label}</span>
+          <span className="text-[13px] text-muted">Settled in Hisaab on Arc.</span>
         </div>
       </Shell>
     )
   }
-  if (!call.long) {
+  if (!long) {
     return (
       <Shell>
         <Note
@@ -150,13 +146,13 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
         <Note
           tag="Out of the entry band"
           tone="warn"
-          text={`Copying is open while price is between ${price(call.entry * (1 - call.band))} and ${price(call.entry * (1 + call.band))}. Right now you’d buy worse than the caller.`}
+          text={`Copying is open while price is between ${price(call.entry * (1 - call.bandPct))} and ${price(call.entry * (1 + call.bandPct))}. Right now you’d buy worse than the caller.`}
           action={
             <button
               type="button"
               className="h-11 cursor-pointer border border-line-strong bg-surface-2 text-[14px]"
             >
-              Notify me when it’s back
+              Notify me when it's back
             </button>
           }
         />
@@ -168,7 +164,7 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
       <Shell>
         <div className="flex flex-col items-center gap-2.5 text-center">
           <span className="grid size-12 place-items-center bg-good-soft text-[22px] text-good">
-            ✓
+            {'✓'}
           </span>
           <h3 className="text-[18px] font-medium">Bought</h3>
           <p className="text-[13px] text-muted">
@@ -215,7 +211,7 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
           <span className="flex justify-between text-[12px] text-muted">
             <span>Amount</span>
             <span>
-              Avbl <span className="text-ink">{usd(me.balance).slice(1)}</span> USDC
+              Avbl <span className="text-ink">{usd(balance).slice(1)}</span> USDC
             </span>
           </span>
           <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5">
@@ -305,11 +301,11 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
         </dl>
         <button
           type="button"
-          disabled={size <= 0 || size > me.balance}
+          disabled={size <= 0 || size > balance}
           onClick={() => setBought(size)}
           className="h-[46px] cursor-pointer bg-good text-[14px] font-semibold text-bg hover:brightness-110"
         >
-          {size > me.balance ? 'More than your balance' : `Copy long ${call.asset}`}
+          {size > balance ? 'More than your balance' : `Copy long ${call.asset}`}
         </button>
       </div>
     </Shell>
