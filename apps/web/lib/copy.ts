@@ -45,6 +45,10 @@ export const COPY_STEP: Record<CopyStep, string> = {
   fee: 'Sign the refundable call fee…',
   submit: 'Placing your order…',
 }
+export const BACK_STEP: Record<CopyStep | 'confirm', string> = {
+  ...COPY_STEP,
+  confirm: 'Waiting for Flash to confirm…',
+}
 
 const client = createPublicClient({ chain: viemChain(), transport: http() })
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -333,4 +337,54 @@ export function useCopyActions() {
     [signer, getAccessToken],
   )
   return { cancel, close }
+}
+
+export type BackStep = CopyStep | 'confirm'
+
+/**
+ * The caller backs his own call: the same bracket at his own size, from the wallet the call was
+ * published with, and no Hisaab fee. Once Flash has his order on record the call is a supercall.
+ */
+export function useBack() {
+  const signer = useSigner()
+  return useCallback(
+    async (callId: string, sizeUsd: number, wallet: string, onStep: (s: BackStep) => void) => {
+      const s = await signer(wallet)
+      onStep('quote')
+      const quote = await api<Quote>(`/calls/${callId}/backing/quote`, {
+        method: 'POST',
+        body: { sizeUsd },
+      })
+      const signed = await signQuote(s, quote, onStep)
+      onStep('submit')
+      const r = await post<{ orderId: string; retry?: string }>(`/calls/${callId}/backing`, {
+        sizeUsd,
+        ...signed,
+      })
+      if (!r.ok)
+        throw new ApiError(
+          r.json.code ?? `http_${r.status}`,
+          r.json.detail ?? 'Backing failed',
+          r.status,
+        )
+      // Flash may take a few seconds to show the order (an enter-now buy, to fill): ask again.
+      if (r.status === 202 && r.json.retry) {
+        onStep('confirm')
+        for (let i = 0; i < 8; i++) {
+          await sleep(2500)
+          const again = await post<{ orderId: string }>(r.json.retry, {})
+          if (again.status === 201) break
+          if (!again.ok && again.status !== 202)
+            throw new ApiError(
+              again.json.code ?? `http_${again.status}`,
+              again.json.detail ?? 'Backing failed',
+              again.status,
+            )
+        }
+      }
+      announceCopies()
+      return r.json.orderId
+    },
+    [signer],
+  )
 }
