@@ -23,6 +23,7 @@ import { useLivePrice } from '@/lib/live-price'
 import { useMe, useUsdc, walletOf } from '@/lib/me'
 import { estimate } from '@/lib/money'
 import type { Call } from '@/lib/types'
+import { DepositButton } from './deposit-modal'
 import { cx, Info } from './ui'
 
 const STOPS = [0, 25, 50, 75, 100] as const
@@ -281,8 +282,9 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
         <label className="flex flex-col gap-2.5">
           <span className="flex justify-between text-[12px] text-muted">
             <span>Amount</span>
-            <span>
+            <span className="flex items-center gap-1.5">
               Avbl <span className="text-ink">{usd(balance).slice(1)}</span> USDC
+              {wallet && <DepositButton wallet={wallet} onDone={() => {}} />}
             </span>
           </span>
           <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5">
@@ -473,8 +475,9 @@ function GoSuper({ call, wallet, open }: { call: Call; wallet: string; open: boo
         <label className="flex flex-col gap-2.5">
           <span className="flex justify-between text-[12px] text-muted">
             <span>Your size</span>
-            <span>
+            <span className="flex items-center gap-1.5">
               Avbl <span className="text-ink">{usd(balance).slice(1)}</span> USDC
+              {<DepositButton wallet={wallet} onDone={() => {}} />}
             </span>
           </span>
           <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5">
