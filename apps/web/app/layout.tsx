@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { Providers } from '@/lib/privy'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400&display=swap"
         />
       </head>
-      <body className="min-h-screen text-sm antialiased">{children}</body>
+      <body className="min-h-screen text-sm antialiased">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }

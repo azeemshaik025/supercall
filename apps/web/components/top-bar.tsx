@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { calls } from '@/lib/data'
 import { usd } from '@/lib/format'
+import { SignInButton } from './auth'
 import { Notifications } from './notifications'
 
 function crumbs(path: string): [string, string] {
@@ -77,6 +78,7 @@ export function TopBar({ balance }: { balance: number }) {
         <Link href="/compose" className="btn-cta flex h-9 items-center px-3.5 text-[13px]">
           Publish a call
         </Link>
+        <SignInButton />
       </div>
     </header>
   )
