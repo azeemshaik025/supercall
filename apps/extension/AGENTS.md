@@ -5,12 +5,15 @@ The X browser extension: a live call card under a caller's post. WXT and React, 
 ## Owns
 
 - Finding call posts in the X timeline and drawing the card.
-- Copy, which opens our site in a popup. Wallets can't be reached inside X's page, so nothing
-  is signed in the extension.
+- The side panel: the account, wallet, USDC and caller status, and the copy sheet for the call a
+  card's Copy picked. It has no sign-in of its own: a script on the Supercall site
+  (`entrypoints/site.ts`) hands over the site's Privy session, and the panel sends it to the API.
+- Anything a wallet signs (sign-in, World ID, the caller record, a copy's fee) opens the site in a
+  wallet-sized window, where the session and wallet already are. Nothing is signed in X's page.
 
 ## Belongs elsewhere
 
-- Every signature and the copy flow: `apps/web`.
+- Signing and the copy flow: `apps/web`, in its popup pages (`/connect`, `/verify`, `/m/<id>`).
 - Call data: `apps/api`, in the shapes from `@supercall/api-schema`.
 
 ## Spec

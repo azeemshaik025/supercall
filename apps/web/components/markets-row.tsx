@@ -18,7 +18,7 @@ export function MarketsRow({ markets }: { markets: Market[] }) {
             className="surface-card flex flex-col gap-3 p-4 hover:border-line-strong"
           >
             <span className="flex items-center gap-2">
-              <TokenIcon symbol={m.symbol} size={24} />
+              <TokenIcon symbol={m.symbol} src={m.imageUrl} size={24} />
               <span className="text-[14px] font-medium">{m.symbol}/USDC</span>
             </span>
             <span className="flex items-baseline justify-between">

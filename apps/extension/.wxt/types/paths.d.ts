@@ -7,6 +7,7 @@ declare module "wxt/browser" {
     | "/"
     | "/background.js"
     | "/content-scripts/content.js"
+    | "/dither.svg"
     | "/icon-light/128.png"
     | "/icon-light/16.png"
     | "/icon-light/32.png"
@@ -15,6 +16,8 @@ declare module "wxt/browser" {
     | "/icon/16.png"
     | "/icon/32.png"
     | "/icon/48.png"
+    | "/sidepanel.html"
+    | "/site.js"
   type HtmlPublicPath = Extract<PublicPath, `${string}.html`>
   export interface WxtRuntime {
     getURL(path: PublicPath): string;

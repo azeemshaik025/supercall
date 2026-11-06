@@ -1,5 +1,10 @@
+import type {
+  callerResponse,
+  callersResponse,
+  callResponse,
+  callsResponse,
+} from '@supercall/api-schema'
 import type { z } from 'zod'
-import type { callResponse, callerResponse, callsResponse, callersResponse } from '@supercall/api-schema'
 
 export const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
@@ -93,9 +98,30 @@ export async function fetchMarkets(): Promise<ApiMarket[]> {
 
 export type ApiCandle = { t: number; o: number; h: number; l: number; c: number; v: number }
 
+/** A candle as the API sends it: unix seconds and full field names. */
+type WireCandle = {
+  time: number
+  open: number
+  high: number
+  low: number
+  close: number
+  volume: number
+}
+
+/** The API's candles in the chart's shape: milliseconds, short names. */
+export const toCandles = (wire: WireCandle[] = []): ApiCandle[] =>
+  wire.map((c) => ({ t: c.time * 1000, o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume }))
+
 export async function fetchCandles(address: string, tf = '1h'): Promise<ApiCandle[]> {
-  const data = await get<{ candles: ApiCandle[] }>(`/markets/${address}/candles?tf=${tf}`).catch(
+  const data = await get<{ candles: WireCandle[] }>(`/markets/${address}/candles?tf=${tf}`).catch(
     () => ({ candles: [] }),
   )
-  return data.candles
+  return toCandles(data.candles)
+}
+
+/** Candles from the browser, fresh each time (no server cache): the composer and market chart. */
+export async function loadCandles(address: string, tf: string): Promise<ApiCandle[]> {
+  const res = await fetch(`${API}/markets/${address}/candles?tf=${tf}`)
+  if (!res.ok) return []
+  return toCandles(((await res.json()) as { candles?: WireCandle[] }).candles)
 }

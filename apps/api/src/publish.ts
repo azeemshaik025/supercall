@@ -187,7 +187,17 @@ export function publishRoutes(deps: {
       ...callerTypedData(fields),
     })
     if (!signed) return c.json({ code: 'bad_signature', detail: 'Signed by another wallet' }, 400)
-    await arkiv.writeCaller({ ...fields, signature })
+    try {
+      await arkiv.writeCaller({ ...fields, signature })
+    } catch (e) {
+      // Arkiv refused the write (no funds for it, rate limit, RPC down): say so, not a bare 500.
+      const reason = (e as Error).message?.split('\n')[0] ?? 'unknown'
+      console.error('caller record not written to Arkiv:', reason)
+      return c.json(
+        { code: 'arkiv_write_failed', detail: `Arkiv didn’t take the record: ${reason}` },
+        502,
+      )
+    }
     snapshot.stale()
     // From now on their posts on X can be calls: have X send them (spec, "How a call is made").
     const xUserId = who.profile.xUserId

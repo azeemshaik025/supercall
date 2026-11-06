@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { usd } from '@/lib/format'
+import { useMe, useUsdc, walletOf } from '@/lib/me'
 import { SignInButton } from './auth'
 import { Notifications } from './notifications'
 
@@ -22,10 +23,12 @@ function crumbs(path: string): [string, string] {
   return map[path] ?? ['Overview', 'Supercall']
 }
 
-export function TopBar({ balance }: { balance: number }) {
+export function TopBar() {
   const path = usePathname()
   const [group, page] = crumbs(path)
   const [open, setOpen] = useState(false)
+  const { me } = useMe()
+  const balance = useUsdc(walletOf(me))
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-line bg-bg/95 px-6 backdrop-blur">
       <nav
@@ -39,12 +42,15 @@ export function TopBar({ balance }: { balance: number }) {
         <span className="truncate text-ink">{page}</span>
       </nav>
       <div className="relative flex items-center gap-2">
-        <span
-          title="Wallet balance on Arc"
-          className="flex h-9 items-center gap-1.5 border border-line-strong bg-surface px-3 text-[13px]"
-        >
-          {usd(balance)} <span className="text-muted">USDC</span>
-        </span>
+        {me && (
+          <span
+            title="Wallet balance on Arc"
+            className="flex h-9 items-center gap-1.5 border border-line-strong bg-surface px-3 text-[13px]"
+          >
+            {balance === undefined ? '…' : balance === null ? '—' : usd(balance)}{' '}
+            <span className="text-muted">USDC</span>
+          </span>
+        )}
         <button
           type="button"
           aria-label="Notifications"

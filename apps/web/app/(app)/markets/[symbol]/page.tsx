@@ -4,8 +4,8 @@ import { MarketChart } from '@/components/market-chart'
 import { cx, SideTag, TokenIcon } from '@/components/ui'
 import {
   callerByHandle,
-  getCalls,
   getCallers,
+  getCalls,
   getMarkets,
   marketBySymbol,
   openCallsOn,
@@ -38,7 +38,7 @@ export default async function MarketPage({ params }: { params: Promise<{ symbol:
       <section className="surface-card">
         <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-b border-line px-5 py-[18px]">
           <div className="flex items-center gap-3">
-            <TokenIcon symbol={m.symbol} size={40} />
+            <TokenIcon symbol={m.symbol} src={m.imageUrl} size={40} />
             <span className="flex flex-col gap-0.5">
               <span className="text-[18px] font-medium">
                 {m.symbol}

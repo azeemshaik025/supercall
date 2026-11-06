@@ -36,7 +36,10 @@ function toolbarIcon() {
   dark.addEventListener('change', send)
   return () => dark.removeEventListener('change', send)
 }
-const copy = (id: string) => browser.runtime.sendMessage({ type: 'copy', id } satisfies Message)
+// The calls on the page by id, so Copy hands the side panel the call it was drawn from.
+const shownCalls = new Map<string, Extract<Shown, { kind: 'call' | 'close' }>['call']>()
+const copy = (id: string) =>
+  browser.runtime.sendMessage({ type: 'copy', id, call: shownCalls.get(id) } satisfies Message)
 
 export default defineContentScript({
   matches: ['https://x.com/*'],
@@ -66,6 +69,7 @@ export default defineContentScript({
 
     // After the tweet, not inside it: X lays a tweet out in a row and opens it on any click.
     async function drawCard(article: HTMLElement, answer: Shown) {
+      if (answer.kind !== 'not-a-call') shownCalls.set(answer.call.id, answer.call)
       const me = viewer(document)?.toLowerCase()
       const mine = me !== undefined && authors.get(answer.postId)?.toLowerCase() === me
       const ui = await createShadowRootUi(ctx, {

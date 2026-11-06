@@ -1,0 +1,277 @@
+/* The side panel and sign-in window: the app's dark palette (apps/web/app/globals.css). */
+:root {
+  --night: #04090e;
+  --surface: #0b131b;
+  --surface-2: #111b25;
+  --edge: #1b2733;
+  --ink: #eff1f4;
+  --muted: #8799a8;
+  --good: #3ecf8e;
+  --bad: #ff4566;
+  --blue: #1b55c9;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+body {
+  background: var(--night);
+  color: var(--ink);
+  font:
+    14px / 1.45 Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+.sc-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  min-height: 100vh;
+}
+.sc-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.sc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 16px 0;
+}
+/* The landing's dither under everything, faded in from the page so it never sits behind text. */
+.sc-dither {
+  flex: 1;
+  min-height: 180px;
+  margin-top: 24px;
+  background:
+    linear-gradient(var(--night) 0%, #04090e00 45%),
+    url("/dither.svg") center bottom / cover no-repeat;
+}
+/* Signed in, the pattern steps back behind the account and the copy sheet. */
+.sc-dither.sc-quiet {
+  opacity: 0.18;
+}
+.sc-clip {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+.sc-facts {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--edge);
+}
+.sc-facts div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0 0;
+}
+.sc-facts dt {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sc-facts dd {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sc-center {
+  align-items: center;
+  justify-content: center;
+}
+.sc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--edge);
+}
+.sc-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+}
+.sc-brand img {
+  width: 22px;
+  height: 22px;
+}
+.sc-chip {
+  padding: 3px 7px;
+  border: 1px solid var(--edge);
+  font:
+    10px / 1.4 "Geist Mono",
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sc-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 6px;
+}
+.sc-hero h1 {
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+.sc-hero h1 span {
+  color: #9cc2ff;
+}
+.sc-methods {
+  text-align: center;
+  font:
+    11px / 1.4 "Geist Mono",
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sc-hint {
+  padding: 12px 14px;
+  border: 1px dashed var(--edge);
+  color: var(--muted);
+}
+.sc-box {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--edge);
+}
+.sc-label {
+  font:
+    11px / 1.4 "Geist Mono",
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sc-muted {
+  color: var(--muted);
+}
+.sc-mono {
+  font-family: "Geist Mono", ui-monospace, monospace;
+}
+.sc-row {
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.sc-levels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.sc-levels div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--surface-2);
+}
+.sc-good {
+  color: var(--good);
+}
+.sc-bad {
+  color: var(--bad);
+}
+.sc-input {
+  width: 100%;
+  padding: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--edge);
+  color: var(--ink);
+  font: inherit;
+}
+.sc-button {
+  padding: 11px 14px;
+  border: 0;
+  background: var(--blue);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sc-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.sc-link {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+.sc-wallet {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--edge);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+}
+.sc-icon:hover,
+.sc-icon.sc-on {
+  border-color: var(--blue);
+}
+.sc-funds {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--edge);
+}
+.sc-qr {
+  display: block;
+  align-self: center;
+  width: 176px;
+  height: 176px;
+  image-rendering: pixelated;
+  padding: 8px;
+  background: #fff;
+}
+.sc-break {
+  min-width: 0;
+  font-size: 12px;
+  word-break: break-all;
+}
+.sc-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sc-small {
+  font-size: 12px;
+}

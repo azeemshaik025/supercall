@@ -3,11 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { useMe, walletOf } from '@/lib/me'
 import { cx, Icon } from './ui'
 
 type Item = { href: string; label: string; icon: string; active: (p: string) => boolean }
 
-const groups: { title?: string; items: Item[] }[] = [
+/** `mine`: the signed-in user's public page, once they have a username. */
+const groupsFor = (mine: string | null): { title?: string; items: Item[] }[] => [
   {
     items: [
       {
@@ -20,7 +22,7 @@ const groups: { title?: string; items: Item[] }[] = [
         href: '/callers',
         label: 'Callers',
         icon: 'callers',
-        active: (p) => p.startsWith('/callers') || p.startsWith('/u/'),
+        active: (p) => p.startsWith('/callers') || (p.startsWith('/u/') && p !== mine),
       },
     ],
   },
@@ -40,6 +42,12 @@ const groups: { title?: string; items: Item[] }[] = [
     title: 'Account',
     items: [
       { href: '/me', label: 'Portfolio', icon: 'portfolio', active: (p) => p === '/me' },
+      {
+        href: mine ?? '/profile',
+        label: 'Profile',
+        icon: 'profile',
+        active: (p) => p === mine,
+      },
       { href: '/profile', label: 'Settings', icon: 'settings', active: (p) => p === '/profile' },
     ],
   },
@@ -47,11 +55,21 @@ const groups: { title?: string; items: Item[] }[] = [
 
 const RAIL = 64
 const FULL = 236
+/** Chart-first pages open with the sidebar folded so the chart gets the room. */
 const chartFirst = (p: string) =>
   p.startsWith('/c/') || p === '/compose' || p.startsWith('/markets')
 
 export function Sidebar() {
   const path = usePathname()
+  const { me } = useMe()
+  const mine = me?.profile ? `/u/${me.profile.username}` : null
+  const groups = groupsFor(mine)
+  const who = me?.profile
+    ? `@${me.profile.username}`
+    : me?.account.x
+      ? `@${me.account.x.username}`
+      : (me?.account.email ?? '')
+  const address = walletOf(me)
   const [pinned, setPinned] = useState<boolean | null>(null)
   const [hover, setHover] = useState(false)
   const isPinned = pinned ?? !chartFirst(path)
@@ -153,19 +171,26 @@ export function Sidebar() {
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2.5 border-t border-line px-4 py-3">
-          <span className="grid size-8 shrink-0 place-items-center bg-surface-3 text-[13px] text-silver">
-            ?
-          </span>
-          <span
-            className={cx(
-              'flex min-w-0 flex-col transition-opacity duration-200',
-              open ? 'opacity-100' : 'opacity-0',
-            )}
-          >
-            <span className="text-[13px] text-muted">Connect wallet</span>
-          </span>
-        </div>
+        {me && (
+          <div className="flex shrink-0 items-center gap-2.5 border-t border-line px-4 py-3">
+            <span className="grid size-8 shrink-0 place-items-center bg-surface-3 text-[13px] text-silver">
+              {(who.replace('@', '')[0] ?? '?').toUpperCase()}
+            </span>
+            <span
+              className={cx(
+                'flex min-w-0 flex-col transition-opacity duration-200',
+                open ? 'opacity-100' : 'opacity-0',
+              )}
+            >
+              <span className="truncate text-[13px] font-medium">{who}</span>
+              {address && (
+                <span className="font-mono text-[12px] text-muted">
+                  {address.slice(0, 6)}…{address.slice(-4)}
+                </span>
+              )}
+            </span>
+          </div>
+        )}
       </aside>
     </div>
   )

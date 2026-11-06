@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { loadCandles } from '@/lib/api'
 import type { Candle } from '@/lib/types'
 import { CandleChart } from './candle-chart'
 import { Segmented } from './ui'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 const TIMEFRAMES = ['15m', '1h', '4h', '1d'] as const
 
 export function MarketChart({
@@ -24,10 +24,9 @@ export function MarketChart({
   useEffect(() => {
     if (!address) return
     let stale = false
-    fetch(`${API}/markets/${address}/candles?tf=${tf}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (!stale) setCandles(d.candles ?? [])
+    loadCandles(address, tf)
+      .then((candles) => {
+        if (!stale) setCandles(candles)
       })
       .catch(() => {
         if (!stale) setCandles([])

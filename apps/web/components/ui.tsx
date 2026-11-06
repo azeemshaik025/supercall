@@ -23,17 +23,7 @@ export function Icon({
   )
 }
 
-export function TokenIcon({ symbol, size = 32 }: { symbol: string; size?: number }) {
-  return (
-    <img
-      src={`/tokens/${symbol.toLowerCase()}.png`}
-      alt=""
-      width={size}
-      height={size}
-      className="shrink-0 rounded-full"
-    />
-  )
-}
+export { TokenIcon } from './token-icon'
 
 export function VerifiedBadge({ size = 12 }: { size?: number }) {
   return (

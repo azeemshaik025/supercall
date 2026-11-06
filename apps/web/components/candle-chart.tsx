@@ -12,6 +12,7 @@ import {
 } from 'klinecharts'
 import { useEffect, useRef, useState } from 'react'
 import type { Candle } from '@/lib/types'
+import { DrawBar } from './draw-bar'
 
 export type Level = 'target' | 'entry' | 'stop'
 export type Levels = Record<Level, number>
@@ -269,6 +270,9 @@ export function CandleChart({
   height,
   label,
   precision = 2,
+  pick = null,
+  onPicked,
+  tools = false,
 }: {
   candles: Candle[]
   levels?: Levels
@@ -279,9 +283,16 @@ export function CandleChart({
   pnl?: Partial<Record<Level, string>>
   marks?: ChartMark[]
   volume?: boolean
-  height: number
+  /** Pixels, or any CSS height such as a calc() against the viewport. */
+  height: number | string
   label: string
   precision?: number
+  /** A level waiting to be placed: the next click on the chart puts it at that price. */
+  pick?: Level | null
+  /** After a pick lands, so the form can drop the picking state. */
+  onPicked?: () => void
+  /** Shows the drawing toolbar beside the chart. */
+  tools?: boolean
 }) {
   const box = useRef<HTMLDivElement>(null)
   const chartRef = useRef<Chart | null>(null)
@@ -508,7 +519,36 @@ export function CandleChart({
     }
   }, [levels, band, pnl, built, precision])
 
-  return (
+  // Picking a level: a click on the chart places it at the clicked price.
+  const onPickedRef = useRef(onPicked)
+  onPickedRef.current = onPicked
+  useEffect(() => {
+    const el = box.current
+    const chart = chartRef.current
+    if (!pick || !el || !chart || !built) return
+    const place = (e: MouseEvent) => {
+      const y = e.clientY - el.getBoundingClientRect().top
+      const found = chart.convertFromPixel([{ y }], { paneId: 'candle_pane' })
+      const value = (Array.isArray(found) ? found[0] : found)?.value
+      if (value !== undefined && value > 0) onLevelRef.current?.(pick, value)
+      onPickedRef.current?.()
+    }
+    el.addEventListener('click', place)
+    el.style.cursor = 'crosshair'
+    return () => {
+      el.removeEventListener('click', place)
+      el.style.cursor = ''
+    }
+  }, [pick, built])
+
+  const canvas = (
     <div ref={box} role="img" aria-label={label} style={{ height }} className="w-full min-w-0" />
+  )
+  if (!tools) return canvas
+  return (
+    <div className="flex min-w-0" style={{ height }}>
+      <DrawBar chart={built ? chartRef.current : null} />
+      <div className="min-w-0 flex-1">{canvas}</div>
+    </div>
   )
 }
