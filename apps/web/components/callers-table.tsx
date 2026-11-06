@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { calls, isOpen } from '@/lib/data'
+import { isOpen } from '@/lib/data'
 import { usdShort } from '@/lib/format'
-import type { Caller } from '@/lib/types'
+import type { Call, Caller } from '@/lib/types'
 import { LastTen } from './caller-card'
 import { cx, Segmented, VerifiedBadge } from './ui'
 
@@ -20,14 +20,16 @@ const by: Record<Sort, (a: Caller, b: Caller) => number> = {
 
 const cols = 'grid-cols-[32px_minmax(200px,2fr)_1.2fr_1.2fr_0.6fr_1fr_0.8fr_0.9fr_92px]'
 
-export function CallersTable({ callers }: { callers: Caller[] }) {
+export function CallersTable({ callers, calls }: { callers: Caller[]; calls: Call[] }) {
   const [sort, setSort] = useState<Sort>('SuperFactor')
   const [q, setQ] = useState('')
-  const [following, setFollowing] = useState<Set<string>>(() => new Set(['0xmeera']))
+  const [following, setFollowing] = useState<Set<string>>(() => new Set())
   const rows = useMemo(() => {
     const n = q.trim().toLowerCase()
     return [...callers]
-      .filter((c) => !n || c.handle.includes(n) || c.name.toLowerCase().includes(n))
+      .filter(
+        (c) => !n || c.handle.includes(n) || c.displayName.toLowerCase().includes(n),
+      )
       .sort(by[sort])
   }, [callers, sort, q])
 
@@ -80,11 +82,11 @@ export function CallersTable({ callers }: { callers: Caller[] }) {
                 <span className="text-muted">{i + 1}</span>
                 <Link href={`/u/${c.handle}`} className="flex min-w-0 items-center gap-3">
                   <span className="grid size-[34px] shrink-0 place-items-center bg-surface-3 text-[13px] text-silver">
-                    {c.name[0]}
+                    {c.displayName[0]}
                   </span>
                   <span className="flex min-w-0 flex-col gap-0.5">
                     <span className="flex items-center gap-1.5 font-medium">
-                      {c.name} {c.verified && <VerifiedBadge />}
+                      {c.displayName} {c.verified && <VerifiedBadge />}
                     </span>
                     <span className="text-[12px] text-muted">@{c.handle}</span>
                   </span>
@@ -107,7 +109,7 @@ export function CallersTable({ callers }: { callers: Caller[] }) {
                   {usdShort(c.followersNetUsd)}
                 </span>
                 <span>{c.followersProfitablePct}%</span>
-                <span>{usdShort(c.fundUsd)}</span>
+                <span>{usdShort(c.poolUsd)}</span>
                 <button
                   type="button"
                   aria-pressed={on}

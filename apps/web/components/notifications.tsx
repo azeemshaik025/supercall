@@ -1,8 +1,5 @@
 'use client'
 
-import Link from 'next/link'
-import { notifications } from '@/lib/data'
-
 export function Notifications({ onClose }: { onClose: () => void }) {
   return (
     <div
@@ -20,20 +17,7 @@ export function Notifications({ onClose }: { onClose: () => void }) {
           Close
         </button>
       </div>
-      <ul>
-        {notifications.map((n) => (
-          <li key={n.id} className="border-b border-line last:border-0">
-            <Link
-              href={n.href}
-              onClick={onClose}
-              className="flex flex-col gap-1 px-4 py-3 hover:bg-surface-2"
-            >
-              <span className="text-[13px]">{n.title}</span>
-              <span className="text-[12px] text-muted">{n.when}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <p className="px-4 py-8 text-center text-[13px] text-muted">No notifications yet.</p>
     </div>
   )
 }

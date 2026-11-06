@@ -3,20 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { calls } from '@/lib/data'
 import { usd } from '@/lib/format'
 import { useMe, useUsdc, walletOf } from '@/lib/me'
 import { SignInButton } from './auth'
 import { Notifications } from './notifications'
 
 function crumbs(path: string): [string, string] {
-  if (path.startsWith('/c/')) {
-    const call = calls.find((c) => c.id === path.split('/')[2])
-    return [
-      'Explore',
-      call ? `${call.asset} ${call.long ? 'long' : 'short'} · @${call.caller}` : 'Call',
-    ]
-  }
+  if (path.startsWith('/c/')) return ['Explore', 'Call']
   if (path.startsWith('/markets/')) return ['Explore', `${path.split('/')[2]?.toUpperCase()}/USDC`]
   if (path.startsWith('/u/')) return ['Callers', `@${path.split('/')[2]}`]
   const map: Record<string, [string, string]> = {
@@ -78,7 +71,6 @@ export function TopBar() {
             <path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z" />
             <path d="M10 21h4" />
           </svg>
-          <span className="absolute top-[7px] right-2 size-1.5 rounded-full bg-warn" />
         </button>
         {open && <Notifications onClose={() => setOpen(false)} />}
         <Link href="/compose" className="btn-cta flex h-9 items-center px-3.5 text-[13px]">

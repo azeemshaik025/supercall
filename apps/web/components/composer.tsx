@@ -1,26 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { type CSSProperties, useMemo, useState } from 'react'
-import { HOUR } from '@/lib/candles'
-import { marketCandles, markets, me } from '@/lib/data'
+import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { pct, price, usd } from '@/lib/format'
-import { CALL_FEE, CREDIT_SHARE, callerCut } from '@/lib/money'
-import type { Asset } from '@/lib/types'
+import { CALL_FEE, callerCut } from '@/lib/money'
+import type { Candle, Market } from '@/lib/types'
 import { CandleChart, type Level } from './candle-chart'
 import { cx, Info, Segmented, TokenIcon } from './ui'
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 const TIMEFRAMES = ['15m', '1h', '4h', '1d'] as const
 const EXPIRIES = ['4h', '24h', '3d', '7d'] as const
-/** Entry zone in percent, 0.10 to 2.00, in 0.05 steps; pulls onto round values when close. */
 const ZONE_MIN = 0.1
 const ZONE_MAX = 2
 const MAGNETS = [0.25, 0.5, 0.75, 1, 1.5, 2]
 const snapZone = (v: number) =>
   MAGNETS.find((m) => Math.abs(m - v) <= 0.04) ??
   Math.min(ZONE_MAX, Math.max(ZONE_MIN, Math.round(v / 0.05) * 0.05))
-
-const TF_MS = { '15m': HOUR / 4, '1h': HOUR, '4h': HOUR * 4, '1d': HOUR * 24 } as const
 
 function defaults(p: number, long: boolean) {
   return long
@@ -36,24 +32,41 @@ function defaults(p: number, long: boolean) {
       }
 }
 
-export function Composer() {
-  const [asset, setAsset] = useState<Asset>('ETH')
-  const market = markets.find((m) => m.symbol === asset) ?? (markets[0] as (typeof markets)[number])
+export function Composer({ markets }: { markets: Market[] }) {
+  const [asset, setAsset] = useState(markets[0]?.symbol ?? 'ETH')
+  const market = markets.find((m) => m.symbol === asset) ?? markets[0]
   const [tf, setTf] = useState<(typeof TIMEFRAMES)[number]>('1h')
   const [long, setLong] = useState(true)
-  const [levels, setLevels] = useState(() => defaults(market.price, true))
+  const [levels, setLevels] = useState(() => defaults(market?.price ?? 1, true))
   const [band, setBand] = useState(0.5)
   const [expiry, setExpiry] = useState<(typeof EXPIRIES)[number]>('3d')
   const [thesis, setThesis] = useState('')
   const [boost, setBoost] = useState(0)
   const [step, setStep] = useState<'edit' | 'review' | 'done'>('edit')
+  const [candles, setCandles] = useState<Candle[]>([])
 
-  const reset = (a: Asset, l: boolean) => {
-    const m = markets.find((x) => x.symbol === a) ?? (markets[0] as (typeof markets)[number])
-    setLevels(defaults(m.price, l))
+  const reset = (a: string, l: boolean) => {
+    const m = markets.find((x) => x.symbol === a) ?? markets[0]
+    setLevels(defaults(m?.price ?? 1, l))
   }
 
-  const candles = useMemo(() => marketCandles(asset, 60, TF_MS[tf]), [asset, tf])
+  useEffect(() => {
+    const address = market?.address
+    if (!address) return
+    let stale = false
+    fetch(`${API}/markets/${address}/candles?tf=${tf}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!stale) setCandles(d.candles ?? [])
+      })
+      .catch(() => {
+        if (!stale) setCandles([])
+      })
+    return () => {
+      stale = true
+    }
+  }, [market?.address, tf])
+
   const onLevel = (key: Level, value: number) =>
     setLevels((v) => ({ ...v, [key]: +value.toPrecision(5) }))
 
@@ -67,10 +80,12 @@ export function Composer() {
       ? 'For a long, target must be above entry and stop below it.'
       : 'For a short, target must be below entry and stop above it.'
     : null
-  const cut = callerCut(me.superFactor) * (1 - boost / 100)
+  const sf = 50
+  const cut = callerCut(sf) * (1 - boost / 100)
   const keepPer1k = 1000 * CALL_FEE * cut
-  const payPer1k = 1000 * risk * CREDIT_SHARE
-  const canBoost = me.superFactor >= 70
+  const creditShare = 0.3
+  const payPer1k = 1000 * risk * creditShare
+  const canBoost = sf >= 70
 
   const ladder = (
     long ? (['target', 'entry', 'stop'] as const) : (['stop', 'entry', 'target'] as const)
@@ -86,11 +101,11 @@ export function Composer() {
     return (
       <section className="surface-card mx-auto flex max-w-md flex-col items-center gap-3 p-8 text-center">
         <span className="grid size-12 place-items-center bg-good-soft text-[22px] text-good">
-          ✓
+          {'✓'}
         </span>
         <h1 className="text-[24px] font-medium">Call published</h1>
         <p className="text-[13px] text-muted">
-          {long ? 'Long' : 'Short'} {asset} is on Arkiv and can’t be edited or deleted. Followers
+          {long ? 'Long' : 'Short'} {asset} is on Arkiv and can't be edited or deleted. Followers
           can copy it once price is in your entry zone.
         </p>
         <div className="mt-3 grid w-full grid-cols-2 gap-2">
@@ -121,7 +136,7 @@ export function Composer() {
             <select
               value={asset}
               onChange={(e) => {
-                const a = e.target.value as Asset
+                const a = e.target.value
                 setAsset(a)
                 reset(a, long)
               }}
@@ -136,17 +151,17 @@ export function Composer() {
           </label>
           <span className="flex flex-col gap-0.5">
             <span className="text-[12px] text-muted">Price</span>
-            <span className="text-[15px] font-medium">{price(market.price)}</span>
+            <span className="text-[15px] font-medium">{price(market?.price ?? 0)}</span>
           </span>
           <span className="flex flex-col gap-0.5">
             <span className="text-[12px] text-muted">24h</span>
             <span
               className={cx(
                 'text-[15px] font-medium',
-                market.change24h >= 0 ? 'text-good' : 'text-bad',
+                (market?.change24h ?? 0) >= 0 ? 'text-good' : 'text-bad',
               )}
             >
-              {pct(market.change24h)}
+              {pct(market?.change24h ?? 0)}
             </span>
           </span>
           <div className="ml-auto">
@@ -160,7 +175,7 @@ export function Composer() {
             band={band / 100}
             onLevel={onLevel}
             height={460}
-            precision={market.price < 1 ? 4 : 2}
+            precision={(market?.price ?? 1) < 1 ? 4 : 2}
             label={`${asset} candles with your levels; drag a line to move it`}
           />
         </div>
@@ -172,7 +187,7 @@ export function Composer() {
             {step === 'review' ? 'Review call' : 'New call'}
           </h1>
           <span className="text-[12px] text-muted">
-            SuperFactor <span className="text-ink">{me.superFactor}</span>
+            SuperFactor <span className="text-ink">{sf}</span>
           </span>
         </div>
 
@@ -194,10 +209,10 @@ export function Composer() {
               ))}
             </dl>
             {thesis && (
-              <p className="border-l border-line-strong pl-3 text-[13px] text-silver">“{thesis}”</p>
+              <p className="border-l border-line-strong pl-3 text-[13px] text-silver">"{thesis}"</p>
             )}
             <p className="text-[12px] text-muted">
-              Publishing writes this call to Arkiv. It can’t be edited or deleted, and it counts
+              Publishing writes this call to Arkiv. It can't be edited or deleted, and it counts
               toward your SuperFactor.
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -346,7 +361,7 @@ export function Composer() {
                   Boost to Explore{' '}
                   <Info
                     label="About boost"
-                    text="Give up part of your cut to feature the call on Explore. Followers' protection doesn’t change. SuperFactor 70+ only."
+                    text="Give up part of your cut to feature the call on Explore. Followers’ protection doesn’t change. SuperFactor 70+ only."
                   />
                 </span>
                 <span>{canBoost ? `${boost}% of your cut` : 'SuperFactor 70+ only'}</span>
@@ -368,11 +383,11 @@ export function Composer() {
             <dl className="flex flex-col border-t border-line text-[13px]">
               <dt className="pt-3.5 pb-1 text-[12px] text-muted">For every $1,000 copied</dt>
               <div className="flex justify-between border-b border-line py-2.5">
-                <dt className="text-muted">If you’re right, you keep</dt>
+                <dt className="text-muted">If you're right, you keep</dt>
                 <dd className="text-good">{usd(keepPer1k)}</dd>
               </div>
               <div className="flex justify-between py-2.5">
-                <dt className="text-muted">If you’re wrong, your fund pays</dt>
+                <dt className="text-muted">If you're wrong, your fund pays</dt>
                 <dd className="text-bad">up to {usd(payPer1k)}</dd>
               </div>
             </dl>

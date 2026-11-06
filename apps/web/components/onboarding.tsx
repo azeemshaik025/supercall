@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { me } from '@/lib/data'
 import { cx } from './ui'
 
 type Step = 'welcome' | 'connect' | 'verify' | 'done'
@@ -44,7 +43,7 @@ export function Onboarding() {
               Welcome to Supercall
             </h1>
             <p className="max-w-80 text-[14px] leading-relaxed text-muted">
-              Copy anyone’s calls, or make your own. Callers only get paid when they’re right.
+              Copy anyone's calls, or make your own. Callers only get paid when they're right.
             </p>
             <button
               type="button"
@@ -60,7 +59,7 @@ export function Onboarding() {
             <div className="flex flex-col gap-1.5">
               <h1 className="text-[26px] font-medium tracking-[-0.02em]">Connect</h1>
               <p className="text-[13px] text-muted">
-                Use the wallet you have, or sign in with email and we’ll make one.
+                Use the wallet you have, or sign in with email and we'll make one.
               </p>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -95,9 +94,9 @@ export function Onboarding() {
           <section className="surface-card flex flex-col gap-[18px] p-7">
             <img src="/brand/verified.svg" alt="" className="size-11" />
             <div className="flex flex-col gap-1.5">
-              <h1 className="text-[26px] font-medium tracking-[-0.02em]">Prove you’re one human</h1>
+              <h1 className="text-[26px] font-medium tracking-[-0.02em]">Prove you're one human</h1>
               <p className="text-[13px] leading-relaxed text-muted">
-                Only needed to publish calls. World ID proves you’re a unique person without telling
+                Only needed to publish calls. World ID proves you're a unique person without telling
                 us who you are. No name, no passport, no country.
               </p>
             </div>
@@ -126,11 +125,10 @@ export function Onboarding() {
         {step === 'done' && (
           <section className="surface-card flex flex-col items-center gap-3 px-7 py-8 text-center">
             <span className="grid size-12 place-items-center bg-good-soft text-[22px] text-good">
-              ✓
+              {'✓'}
             </span>
-            <h1 className="text-[26px] font-medium tracking-[-0.02em]">You’re set</h1>
+            <h1 className="text-[26px] font-medium tracking-[-0.02em]">You're set</h1>
             <p className="text-[13px] leading-relaxed text-muted">
-              Connected as {me.address}.{' '}
               {verified
                 ? 'You can publish calls and copy anyone’s.'
                 : 'You can copy anyone’s calls. Verify with World ID when you want to publish.'}

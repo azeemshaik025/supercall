@@ -1,19 +1,42 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { HOUR } from '@/lib/candles'
-import { marketBySymbol, marketCandles } from '@/lib/data'
-import type { Asset } from '@/lib/types'
+import { useEffect, useMemo, useState } from 'react'
+import type { Candle } from '@/lib/types'
 import { CandleChart } from './candle-chart'
 import { Segmented } from './ui'
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 const TIMEFRAMES = ['15m', '1h', '4h', '1d'] as const
-const MS = { '15m': HOUR / 4, '1h': HOUR, '4h': HOUR * 4, '1d': HOUR * 24 } as const
 
-export function MarketChart({ asset }: { asset: Asset }) {
+export function MarketChart({
+  address,
+  currentPrice,
+  asset,
+}: {
+  address: string
+  currentPrice: number
+  asset: string
+}) {
   const [tf, setTf] = useState<(typeof TIMEFRAMES)[number]>('1h')
-  const candles = useMemo(() => marketCandles(asset, 90, MS[tf]), [asset, tf])
-  const p = marketBySymbol(asset)?.price ?? 1
+  const [candles, setCandles] = useState<Candle[]>([])
+  const p = currentPrice || 1
+
+  useEffect(() => {
+    if (!address) return
+    let stale = false
+    fetch(`${API}/markets/${address}/candles?tf=${tf}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!stale) setCandles(d.candles ?? [])
+      })
+      .catch(() => {
+        if (!stale) setCandles([])
+      })
+    return () => {
+      stale = true
+    }
+  }, [address, tf])
+
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between px-5 pt-3.5">
