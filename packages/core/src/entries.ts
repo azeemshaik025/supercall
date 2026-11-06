@@ -41,15 +41,21 @@ export function targetOdds(call: { entry: number; stop: number; target: number }
   return r + w > 0 ? r / (r + w) : 0
 }
 
-export function canMirror(call: {
-  type: CallType
-  status: CallStatus
-  direction: Direction
-  entry: number
-  target: number
-  bandPct: number
-  price: number
-}): boolean {
+export function canMirror(
+  call: {
+    type: CallType
+    status: CallStatus
+    direction: Direction
+    entry: number
+    target: number
+    bandPct: number
+    price: number
+    /** The deadline (ISO): a call past it is over, whatever its status says until it settles. */
+    expiresAt?: string
+  },
+  now = Date.now(),
+): boolean {
+  if (call.expiresAt && Date.parse(call.expiresAt) <= now) return false
   if (rewardPct(call) < MIN_TARGET_DISTANCE) return false
   if (call.type === 'future-level') {
     const waiting = call.direction === 'long' ? call.price > call.entry : call.price < call.entry
