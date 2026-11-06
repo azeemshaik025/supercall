@@ -275,3 +275,15 @@ body {
 .sc-small {
   font-size: 12px;
 }
+
+.sc-warn {
+  color: #e8b04a;
+}
+
+.sc-copies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--edge);
+}
