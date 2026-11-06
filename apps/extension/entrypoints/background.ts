@@ -3,6 +3,7 @@ import { defineBackground } from 'wxt/utils/define-background'
 import { createCallerLookup } from '../lib/caller'
 import { type Call, createLookup, type Post } from '../lib/lookup'
 import { savePending } from '../lib/pending'
+import { SESSION_KEY } from '../lib/session'
 
 declare const __API_URL__: string
 declare const __WEB_ORIGIN__: string
@@ -10,8 +11,8 @@ declare const __WEB_ORIGIN__: string
 export type Message =
   | { type: 'lookup'; posts: Post[] }
   | { type: 'copy'; id: string; call?: Call }
-  | { type: 'sign-in' }
-  | { type: 'signed-in' }
+  | { type: 'session'; token: string | null }
+  | { type: 'open'; path: string }
   | { type: 'theme'; dark: boolean }
   | { type: 'caller'; x: string }
 
@@ -37,18 +38,22 @@ export default defineBackground(() => {
       })
       return true
     }
-    if (message.type === 'sign-in') {
-      // Privy's X sign-in leaves the page for X and comes back, which the side panel can't do:
-      // it runs in a small window of its own, and the side panel reloads when it's done.
+    if (message.type === 'session') {
+      // From the site's script: its sign-in, or null once signed out. The side panel reads it.
+      void browser.storage.session.set({ [SESSION_KEY]: message.token })
+      return
+    }
+    if (message.type === 'open') {
+      // Sign-in, World ID and anything signed happen on the site, in a wallet-sized window,
+      // where the session and wallet already are.
       browser.windows.create({
-        url: browser.runtime.getURL('/auth.html'),
+        url: `${__WEB_ORIGIN__}${message.path}`,
         type: 'popup',
         width: 420,
-        height: 680,
+        height: 720,
       })
       return
     }
-    if (message.type === 'signed-in') return
     if (message.type === 'copy') {
       const pending = { id: message.id, call: message.call, at: Date.now() }
       // Opened first, while the click still counts as the user's: Chrome opens a side panel
