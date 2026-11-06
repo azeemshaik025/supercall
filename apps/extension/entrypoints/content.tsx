@@ -12,6 +12,7 @@ import { contentInset, findProfile, findTweets, headerSlot, viewer } from '../li
 import type { Message } from './background'
 
 declare const __WEB_ORIGIN__: string
+declare const __BUILD__: string
 
 const card = 'supercall-card'
 const badge = 'supercall-badge'
@@ -47,6 +48,8 @@ export default defineContentScript({
   // Styles the card imports go inside its shadow root, where X's styles can't reach.
   cssInjectionMode: 'ui',
   main(ctx) {
+    // Which build is running on this page: X's console shows it.
+    console.info(`Supercall extension ${__BUILD__}`)
     // X drops tweets that scroll away and redraws them on the way back, as new elements.
     const asked = new WeakSet<HTMLElement>()
     const latest = new Map<string, HTMLElement>()

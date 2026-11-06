@@ -16,6 +16,7 @@ import type { Message } from '../background'
 
 declare const __API_URL__: string
 declare const __WEB_ORIGIN__: string
+declare const __BUILD__: string
 
 // The app's chain (CHAIN): where Hisaab holds fees and Flash trades.
 const client = createPublicClient({ chain: viemChain(), transport: http() })
@@ -524,6 +525,9 @@ function Panel() {
           <p className="sc-hint">Tap Copy under a call on X to copy it here.</p>
         )}
       </div>
+      <p className="sc-build" title="The build running now">
+        Build {__BUILD__}
+      </p>
       <div className={me ? 'sc-dither sc-quiet' : 'sc-dither'} aria-hidden="true" />
     </main>
   )
