@@ -9,6 +9,12 @@ const api = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787'
 const web = (process.env.WEB_ORIGIN ?? 'http://localhost:3000').replace(/,.*/, '').trim()
 // The web app's Privy app: one account and one embedded wallet across the site and the extension.
 const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? ''
+// World ID for becoming a caller from the side panel: the web app's World ID app.
+const world = {
+  appId: process.env.NEXT_PUBLIC_WORLD_APP_ID ?? '',
+  rpId: process.env.NEXT_PUBLIC_WORLD_RP_ID ?? '',
+  environment: process.env.NEXT_PUBLIC_WORLD_ENVIRONMENT === 'staging' ? 'staging' : 'production',
+}
 
 export default defineConfig({
   imports: false,
@@ -28,6 +34,7 @@ export default defineConfig({
       __API_URL__: JSON.stringify(api),
       __WEB_ORIGIN__: JSON.stringify(web),
       __PRIVY_APP_ID__: JSON.stringify(privyAppId),
+      __WORLD__: JSON.stringify(world),
     },
   }),
 })
