@@ -1,0 +1,550 @@
+{
+  "id": "7c8df965-4680-4800-954a-fa8dd42b3b15",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.backings": {
+      "name": "backings",
+      "schema": "",
+      "columns": {
+        "call": {
+          "name": "call",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "order": {
+          "name": "order",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deadline": {
+          "name": "deadline",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.copies": {
+      "name": "copies",
+      "schema": "",
+      "columns": {
+        "pay_fee_tx": {
+          "name": "pay_fee_tx",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "call": {
+          "name": "call",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "follower": {
+          "name": "follower",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "flash_order_id": {
+          "name": "flash_order_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close_order_id": {
+          "name": "close_order_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_signature": {
+          "name": "cancel_signature",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refused_at": {
+          "name": "refused_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "copies_call": {
+          "name": "copies_call",
+          "columns": [
+            {
+              "expression": "call",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "copies_follower": {
+          "name": "copies_follower",
+          "columns": [
+            {
+              "expression": "follower",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "copies_flash_order_id": {
+          "name": "copies_flash_order_id",
+          "nullsNotDistinct": false,
+          "columns": ["flash_order_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.notifications": {
+      "name": "notifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "wallet": {
+          "name": "wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "call": {
+          "name": "call",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "what": {
+          "name": "what",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "price": {
+          "name": "price",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "read_at": {
+          "name": "read_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "notifications_once": {
+          "name": "notifications_once",
+          "nullsNotDistinct": false,
+          "columns": ["wallet", "call", "kind"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "notifications_kind": {
+          "name": "notifications_kind",
+          "value": "\"notifications\".\"kind\" in ('ending')"
+        },
+        "notifications_what": {
+          "name": "notifications_what",
+          "value": "\"notifications\".\"what\" in ('target', 'stop', 'deadline', 'caller', 'unfired', 'void')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.oppose_votes": {
+      "name": "oppose_votes",
+      "schema": "",
+      "columns": {
+        "call": {
+          "name": "call",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "privy_user_id": {
+          "name": "privy_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "wallets": {
+          "name": "wallets",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "voted_at": {
+          "name": "voted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "oppose_votes_call_privy_user_id_pk": {
+          "name": "oppose_votes_call_privy_user_id_pk",
+          "columns": ["call", "privy_user_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.posts": {
+      "name": "posts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "posted_at": {
+          "name": "posted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "text": {
+          "name": "text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verdict": {
+          "name": "verdict",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reading": {
+          "name": "reading",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "call": {
+          "name": "call",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "read_at": {
+          "name": "read_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "posts_verdict": {
+          "name": "posts_verdict",
+          "value": "\"posts\".\"verdict\" in ('call', 'close', 'not-a-call')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.profiles": {
+      "name": "profiles",
+      "schema": "",
+      "columns": {
+        "privy_user_id": {
+          "name": "privy_user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wallet": {
+          "name": "wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "x_user_id": {
+          "name": "x_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "x_username": {
+          "name": "x_username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "x_name": {
+          "name": "x_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "x_avatar_url": {
+          "name": "x_avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "profiles_username": {
+          "name": "profiles_username",
+          "nullsNotDistinct": false,
+          "columns": ["username"]
+        },
+        "profiles_x_user_id": {
+          "name": "profiles_x_user_id",
+          "nullsNotDistinct": false,
+          "columns": ["x_user_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.voids": {
+      "name": "voids",
+      "schema": "",
+      "columns": {
+        "call": {
+          "name": "call",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evidence": {
+          "name": "evidence",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.world_nullifiers": {
+      "name": "world_nullifiers",
+      "schema": "",
+      "columns": {
+        "nullifier": {
+          "name": "nullifier",
+          "type": "numeric(78, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "wallet": {
+          "name": "wallet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "environment": {
+          "name": "environment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "world_nullifiers_nullifier_action": {
+          "name": "world_nullifiers_nullifier_action",
+          "nullsNotDistinct": false,
+          "columns": ["nullifier", "action"]
+        },
+        "world_nullifiers_wallet_action": {
+          "name": "world_nullifiers_wallet_action",
+          "nullsNotDistinct": false,
+          "columns": ["wallet", "action"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
