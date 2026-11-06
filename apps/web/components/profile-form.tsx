@@ -52,7 +52,7 @@ const tile = (c: React.ReactNode) => (
 
 export function ProfileForm() {
   const { getAccessToken, linkTwitter, linkEmail } = usePrivy()
-  const { me, error, reload } = useMe()
+  const { me, error } = useMe()
   const caller = useCallerSetup()
   const [username, setUsername] = useState('')
   const [name, setName] = useState('')
@@ -60,11 +60,15 @@ export function ProfileForm() {
   const [problem, setProblem] = useState<string>()
   const [saving, setSaving] = useState(false)
   // Filled from the account once it loads: the saved profile, else the X handle as a suggestion.
+  const savedName = me?.profile?.username
+  const savedDisplay = me?.profile?.displayName
+  const xName = me?.account.x?.username
+  const xDisplay = me?.account.x?.name
+  // Only when what's saved or linked changes, so a re-read never wipes what's being typed.
   useEffect(() => {
-    if (!me) return
-    setUsername(me.profile?.username ?? usernameFromX(me.account.x?.username) ?? '')
-    setName(me.profile?.displayName ?? me.account.x?.name ?? '')
-  }, [me])
+    setUsername(savedName ?? usernameFromX(xName) ?? '')
+    setName(savedDisplay ?? xDisplay ?? '')
+  }, [savedName, savedDisplay, xName, xDisplay])
   const save = async () => {
     setSaving(true)
     setProblem(undefined)
@@ -75,7 +79,6 @@ export function ProfileForm() {
         body: { username: username.toLowerCase(), displayName: name || undefined },
       })
       setSaved(true)
-      await reload()
       await caller.reload()
     } catch (e) {
       setProblem(e instanceof ApiError ? e.message : String(e))

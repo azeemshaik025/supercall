@@ -5,6 +5,7 @@
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, api } from './api'
+import { useMe } from './me'
 
 type Me = {
   profile: { username: string; wallet: string; worldVerified: boolean } | null
@@ -36,6 +37,8 @@ export const usernameFromX = (handle: string | null | undefined) => {
 export function useCallerSetup() {
   const { ready, authenticated, user, getAccessToken } = usePrivy()
   const { wallets } = useWallets()
+  // The page's shared account: when it's read again (an X link, a save), these steps follow.
+  const shared = useMe()
   const [me, setMe] = useState<Me>()
   const [caller, setCaller] = useState<MyCaller>()
   const [step, setStep] = useState<CallerStep>('loading')
@@ -54,6 +57,7 @@ export function useCallerSetup() {
         try {
           await api('/me', { method: 'PUT', token, body: { username: fromX } })
           m = await api<Me>('/me', { token })
+          void shared.reload()
         } catch (e) {
           if (!(e instanceof ApiError)) throw e
         }
@@ -74,11 +78,13 @@ export function useCallerSetup() {
       )
       setStep('error')
     }
-  }, [ready, authenticated, user?.twitter?.username, getAccessToken])
+  }, [ready, authenticated, user?.twitter?.username, getAccessToken, shared.reload])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: shared.me is the signal to read again
   useEffect(() => {
     void load()
-  }, [load])
+    // Read again whenever the shared account changes.
+  }, [load, shared.me])
 
   /** Saves the username the caller record is published under, on the account's first wallet. */
   const saveUsername = async (username: string) => {
@@ -89,6 +95,7 @@ export function useCallerSetup() {
         token: await getAccessToken(),
         body: { username: username.toLowerCase() },
       })
+      await shared.reload()
       await load()
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e))
@@ -114,11 +121,17 @@ export function useCallerSetup() {
         token: await getAccessToken(),
         body: { joinedAt: draft.fields.joinedAt, signature },
       })
+      await shared.reload()
       await load()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     }
   }
 
-  return { step, me, caller, error, setError, reload: load, saveUsername, signRecord }
+  const reload = async () => {
+    await shared.reload()
+    await load()
+  }
+
+  return { step, me, caller, error, setError, reload, saveUsername, signRecord }
 }
