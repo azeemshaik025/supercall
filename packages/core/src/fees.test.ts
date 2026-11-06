@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fees, keptFee, loss, netProfit } from './fees.ts'
+import { depositMinimum, fees, keptFee, loss, netProfit } from './fees.ts'
 
 describe('fees', () => {
   it('computes fees on $1,000', () => {
@@ -86,5 +86,32 @@ describe('other endings below entry, Priya $1,000', () => {
 
   it('ran out of time at 2900: loss $36.23', () => {
     expect(loss(1000, 3000, 2900)).toBeCloseTo(36.23, 1)
+  })
+})
+
+describe('depositMinimum', () => {
+  function check(inUsd: number, outUsd: number, expected: number | undefined) {
+    expect(depositMinimum(inUsd, outUsd)).toBe(expected)
+  }
+
+  it('returns undefined when bridge cost is under 10%', () => {
+    check(100, 95, undefined)
+    check(100, 91, undefined)
+    check(100, 90, undefined)
+  })
+
+  it('returns a minimum when bridge cost exceeds 10%', () => {
+    const min = depositMinimum(10, 8)
+    expect(min).toBeDefined()
+    expect(min!).toBeGreaterThan(10)
+  })
+
+  it('returns undefined at exactly 10% cost', () => {
+    check(100, 90, undefined)
+  })
+
+  it('ceiling rounds the minimum to cents', () => {
+    const min = depositMinimum(5, 3)!
+    expect(min).toBe(Math.ceil(min * 100) / 100)
   })
 })
