@@ -9,7 +9,10 @@ export * from './schema.ts'
 
 export function createDb(url = process.env.DATABASE_URL) {
   if (!url) throw new Error('DATABASE_URL is not set')
-  return drizzle(postgres(url, { prepare: !url.includes('-pooler') }), { schema })
+  // DATABASE_POOL_MAX caps connections: a local PGlite runs one query at a time, and queries
+  // from several connections at once get mixed up there (dev.sh sets it to 1).
+  const max = Number(process.env.DATABASE_POOL_MAX) || undefined
+  return drizzle(postgres(url, { prepare: !url.includes('-pooler'), max }), { schema })
 }
 
 export type Db = ReturnType<typeof createDb>
