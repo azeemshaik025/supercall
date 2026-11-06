@@ -17,13 +17,18 @@ function num(n: number) {
 }
 // The API judges it with core's `canMirror`: open, and the price inside the entry band (or still
 // short of a wait-for-a-price entry). Older answers without it fall back to the status alone.
+/** Past its deadline: over, even while its status still says open until it settles. */
+const pastDeadline = (answer: Shown) =>
+  answer.kind !== 'not-a-call' && Date.parse(answer.call.expiresAt) <= Date.now()
 const copyable = (answer: Shown) =>
   answer.kind === 'call' &&
+  !pastDeadline(answer) &&
   (answer.copyable ?? ['pending', 'armed', 'live'].includes(answer.call.status))
 // Open, but the price has left the entry band: say why there's no Copy.
 const outOfBand = (answer: Shown) =>
   answer.kind === 'call' &&
   answer.copyable === false &&
+  !pastDeadline(answer) &&
   ['armed', 'live'].includes(answer.call.status) &&
   Math.abs(answer.call.price - answer.call.entry) > answer.call.entry * answer.call.bandPct
 
@@ -107,7 +112,10 @@ export function Card({
     )
   }
   const { call } = answer
-  const [label, tone] = STATUS[call.status] ?? [call.status, 'muted']
+  const [label, tone] =
+    pastDeadline(answer) && ['pending', 'armed', 'live'].includes(call.status)
+      ? (['Ended · settling', 'muted'] as const)
+      : (STATUS[call.status] ?? [call.status, 'muted'])
   const goSuper = mine && copyable(answer) && !call.supercall
   return (
     <section className="sc-card">
