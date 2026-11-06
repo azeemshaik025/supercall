@@ -20,11 +20,58 @@ export type Message =
 const icons = (dir: string) =>
   Object.fromEntries([16, 32, 48, 128].map((s) => [s, `/${dir}/${s}.png`]))
 
+/** Whether a side panel of ours is open; true when the browser can't say, so Chrome never gets two. */
+async function panelShowing() {
+  const runtime = browser.runtime as unknown as {
+    getContexts?: (filter: { contextTypes: string[] }) => Promise<unknown[]>
+  }
+  if (!runtime.getContexts) return true
+  return runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }).then(
+    (found) => found.length > 0,
+    () => true,
+  )
+}
+
+/** The panel as a small window, brought forward if it's already open. */
+let panelWindow: number | undefined
+async function openPanelWindow() {
+  if (panelWindow !== undefined) {
+    const focused = await browser.windows.update(panelWindow, { focused: true }).catch(() => null)
+    if (focused) return
+  }
+  const made = await browser.windows.create({
+    url: browser.runtime.getURL('/sidepanel.html'),
+    type: 'popup',
+    width: 400,
+    height: 760,
+  })
+  panelWindow = made?.id
+}
+
 export default defineBackground(() => {
   const lookup = createLookup({ api: __API_URL__, fetch, storage: browser.storage.session })
   const callerOf = createCallerLookup({ api: __API_URL__, fetch })
-  // The toolbar button opens the side panel: sign-in, wallet and copy live there.
-  void browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+  // The toolbar button opens the panel: account, wallet and copies. Chrome shows it as a side
+  // panel. Arc and some other Chromium browsers take the side panel calls but never show one,
+  // so when no panel is up a moment later, the same page opens as a small window instead.
+  // Chrome remembers the old "open the panel on click" setting, which would skip this handler.
+  void browser.sidePanel?.setPanelBehavior({ openPanelOnActionClick: false }).catch(() => {})
+  browser.action.onClicked.addListener((tab) => {
+    const opened =
+      tab.windowId !== undefined && browser.sidePanel?.open
+        ? browser.sidePanel.open({ windowId: tab.windowId }).then(
+            () => true,
+            () => false,
+          )
+        : Promise.resolve(false)
+    void opened.then(async (ok) => {
+      if (ok) {
+        await new Promise((r) => setTimeout(r, 600))
+        if (await panelShowing()) return
+      }
+      await openPanelWindow()
+    })
+  })
 
   browser.runtime.onMessage.addListener((message: Message, _sender, reply) => {
     if (message.type === 'theme') {

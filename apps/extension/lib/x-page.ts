@@ -88,3 +88,17 @@ export function findProfile(doc: Document, path: string): Profile | undefined {
   const after = parts.find((p) => p.querySelector(followCounts)) ?? header
   return { x, name, after }
 }
+
+/**
+ * How far in from the tweet's left edge its content starts: past the avatar in a timeline, flush
+ * with the avatar on a post's own page. The card under the tweet lines up with it. Measured from
+ * the post's action bar (reply, repost, like), which always sits on the content column.
+ */
+export function contentInset(article: HTMLElement): number | undefined {
+  const column =
+    article.querySelector<HTMLElement>('[data-testid="tweetText"]') ??
+    article.querySelector<HTMLElement>('[role="group"]')
+  if (!column) return undefined
+  const inset = column.getBoundingClientRect().left - article.getBoundingClientRect().left
+  return inset > 0 && inset < 200 ? Math.round(inset) : undefined
+}
