@@ -7,7 +7,7 @@ import { usePrivy, useWallets } from '@privy-io/react-auth'
 // pays the fee into Hisaab and places the order. Closing and cancelling are signed the same way.
 import { CHAIN, viemChain } from '@supercall/chains'
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
-import { createPublicClient, type Hex, http } from 'viem'
+import { createPublicClient, encodeFunctionData, erc20Abi, type Hex, http, maxUint256 } from 'viem'
 import { API, ApiError, api } from './api'
 
 type Tx = { to: string; data: string; value?: string }
@@ -40,18 +40,38 @@ type CopyQuote = Quote & {
 export type CopyStep = 'quote' | 'approve' | 'sign' | 'fee' | 'submit'
 export const COPY_STEP: Record<CopyStep, string> = {
   quote: 'Getting a price from Flash…',
-  approve: 'Approve USDC in your wallet…',
-  sign: 'Sign the buy, stop and target…',
-  fee: 'Sign the refundable call fee…',
-  submit: 'Placing your order…',
+  approve: 'Allow Flash to trade your USDC (one-time)…',
+  sign: 'Confirm your buy order with stop-loss and take-profit…',
+  fee: 'Authorize the call fee (refunded if the call is wrong)…',
+  submit: 'Placing your order on Flash…',
 }
 export const BACK_STEP: Record<CopyStep | 'confirm', string> = {
   ...COPY_STEP,
+  approve: 'Allow Flash to trade your USDC (one-time)…',
+  sign: 'Confirm your backing order with stop-loss and take-profit…',
   confirm: 'Waiting for Flash to confirm…',
 }
 
 const client = createPublicClient({ chain: viemChain(), transport: http() })
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+async function permit2ApproveTx(funder: string): Promise<Tx | null> {
+  const allowance = await client.readContract({
+    address: CHAIN.usdc.address,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: [funder as Hex, CHAIN.permit2],
+  })
+  if (allowance > 0n) return null
+  return {
+    to: CHAIN.usdc.address,
+    data: encodeFunctionData({
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [CHAIN.permit2, maxUint256],
+    }),
+  }
+}
 
 /** Everything after a copy, a close or a cancel listens here: this tab, the popup, other tabs. */
 const channel =
@@ -129,11 +149,11 @@ function useSigner() {
 type Signer = Awaited<ReturnType<ReturnType<typeof useSigner>>>
 
 /** Approvals first, then every signature a quote asks for. */
-async function signQuote(s: Signer, q: Quote, onStep: (st: CopyStep) => void) {
+async function signQuote(s: Signer, q: Quote, onStep: (st: CopyStep) => void, extraApprovals: Tx[] = []) {
   const order = q.evm
   if (!order?.orderTypedData) throw new Error('Flash sent nothing to sign')
   const exits = q.attachedBracket?.evm ?? null
-  const approvals = [order.approveTx, exits?.approveTx].filter((t): t is Tx => !!t)
+  const approvals = [order.approveTx, exits?.approveTx, ...extraApprovals].filter((t): t is Tx => !!t)
   if (approvals.length) onStep('approve')
   for (const tx of approvals) await s.send(tx)
   onStep('sign')
@@ -190,7 +210,8 @@ export function useCopy() {
         method: 'POST',
         body: { funder: wallet, sizeUsd },
       })
-      const signed = await signQuote(s, quote, onStep)
+      const p2Tx = await permit2ApproveTx(wallet)
+      const signed = await signQuote(s, quote, onStep, p2Tx ? [p2Tx] : [])
       onStep('fee')
       const feeSig = await s.typed(quote.fee.typedData)
       onStep('submit')
