@@ -4,7 +4,7 @@
 // wallet's USDC on the app's chain. Nothing here is demo data.
 import { usePrivy } from '@privy-io/react-auth'
 import { CHAIN, viemChain } from '@supercall/chains'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { createPublicClient, erc20Abi, http } from 'viem'
 import { api } from './api'
 
@@ -23,25 +23,73 @@ export type Me = {
   worldVerified: boolean
 }
 
-/** The account behind the Privy session; null when signed out, undefined while loading. */
+// One account state for the whole page: the top bar, sidebar, settings and caller steps all read
+// it, and any of them asking to read it again updates every one of them.
+type State = { me: Me | null | undefined; error?: string; version: number }
+let state: State = { me: undefined, version: 0 }
+const listeners = new Set<() => void>()
+const set = (next: Partial<State>) => {
+  state = { ...state, ...next, version: state.version + 1 }
+  for (const l of listeners) l()
+}
+const subscribe = (l: () => void) => {
+  listeners.add(l)
+  return () => listeners.delete(l)
+}
+// Several reads can be in flight (sign-in, then an X link finishing): only the newest may land,
+// or a slow answer from before the link would overwrite the fresh one.
+let seq = 0
+async function read(token: Promise<string | null>) {
+  const mine = ++seq
+  try {
+    const me = await api<Me>('/me', { token: await token })
+    if (mine === seq) set({ me, error: undefined })
+  } catch (e) {
+    if (mine === seq) set({ error: e instanceof Error ? e.message : String(e) })
+  }
+}
+
+/**
+ * The account behind the Privy session; null when signed out, undefined while loading. Read
+ * again whenever Privy's account changes (X or email linked, a wallet made, sign-in or out), on
+ * coming back to the tab, and on `reload()`, so nothing needs a page reload.
+ */
 export function useMe() {
-  const { ready, authenticated, getAccessToken } = usePrivy()
-  const [me, setMe] = useState<Me | null>()
-  const [error, setError] = useState<string>()
+  const { ready, authenticated, user, getAccessToken } = usePrivy()
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    () => state,
+    () => state,
+  )
   const reload = useCallback(async () => {
     if (!ready) return
-    if (!authenticated) return setMe(null)
-    try {
-      setMe(await api<Me>('/me', { token: await getAccessToken() }))
-      setError(undefined)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    }
+    if (!authenticated) return set({ me: null, error: undefined })
+    await read(getAccessToken())
   }, [ready, authenticated, getAccessToken])
+
+  // What Privy knows about the account: when it changes, the API's answer changes too.
+  const linked = [
+    authenticated,
+    user?.id,
+    user?.twitter?.subject,
+    user?.email?.address,
+    user?.wallet?.address,
+    user?.linkedAccounts.length,
+  ].join('|')
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `linked` is the signal to read again
   useEffect(() => {
     void reload()
+  }, [linked, reload])
+
+  useEffect(() => {
+    const back = () => {
+      if (document.visibilityState === 'visible') void reload()
+    }
+    document.addEventListener('visibilitychange', back)
+    return () => document.removeEventListener('visibilitychange', back)
   }, [reload])
-  return { me, error, reload }
+
+  return { me: snapshot.me, error: snapshot.error, version: snapshot.version, reload }
 }
 
 /** The address the account publishes and copies from: the profile's, else its first wallet. */
