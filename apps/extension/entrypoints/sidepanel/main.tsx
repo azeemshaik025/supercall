@@ -315,7 +315,7 @@ type MyCopy = {
   sizeUsd: number
   status: string | null
   closed: { gotUsd: number } | null
-  fill: { coin: number; price: number; spentUsd: number } | null
+  fill: { coin: number; price: number; spentUsd: number; tx?: string | null } | null
   /** When the copy was made. */
   at: string
 }
@@ -426,13 +426,7 @@ function Recent({ copies }: { copies: MyCopy[] }) {
         const st = copyState(c)
         const pnl = pnlOf(c, call)
         return (
-          <a
-            key={c.payFeeTx}
-            className="sc-trade"
-            href={`${__WEB_ORIGIN__}/c/${encodeURIComponent(c.call)}`}
-            target="_blank"
-            rel="noreferrer"
-          >
+          <div key={c.payFeeTx} className="sc-trade">
             <div className="sc-row">
               <strong className="sc-clip">
                 {call ? (
@@ -447,9 +441,15 @@ function Recent({ copies }: { copies: MyCopy[] }) {
                   'Call'
                 )}
               </strong>
-              <span className="sc-muted sc-small" title={new Date(c.at).toLocaleString()}>
-                {ago(c.at)}
-              </span>
+              <a
+                className="sc-muted sc-small"
+                title={`Copied ${new Date(c.at).toLocaleString()} · open the call`}
+                href={`${__WEB_ORIGIN__}/c/${encodeURIComponent(c.call)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {ago(c.at)} ↗
+              </a>
             </div>
             <div className="sc-row sc-small">
               <span className="sc-muted sc-clip">
@@ -488,7 +488,28 @@ function Recent({ copies }: { copies: MyCopy[] }) {
                 </div>
               </div>
             )}
-          </a>
+            <div className="sc-trade-links">
+              {c.fill?.tx && /^0x[0-9a-f]{64}$/i.test(c.fill.tx) && (
+                <a href={`${CHAIN.explorerUrl}/tx/${c.fill.tx}`} target="_blank" rel="noreferrer">
+                  Trade on {CHAIN.name} ↗
+                </a>
+              )}
+              {/^0x[0-9a-f]{64}$/i.test(c.payFeeTx) && (
+                <a href={`${CHAIN.explorerUrl}/tx/${c.payFeeTx}`} target="_blank" rel="noreferrer">
+                  Fee tx ↗
+                </a>
+              )}
+              {call?.arkivKey && (
+                <a
+                  href={`https://data.arkiv.network/entity/${call.arkivKey}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Call on Arkiv ↗
+                </a>
+              )}
+            </div>
+          </div>
         )
       })}
     </section>

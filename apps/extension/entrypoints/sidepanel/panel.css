@@ -310,9 +310,6 @@ body {
   color: inherit;
   text-decoration: none;
 }
-.sc-trade:hover {
-  outline: 1px solid var(--edge);
-}
 .sc-trade-nums {
   display: grid;
   grid-template-columns: 1fr 1fr 1.4fr;
@@ -327,4 +324,19 @@ body {
 .sc-trade-nums .sc-mono {
   font-size: 12px;
   white-space: nowrap;
+}
+
+.sc-trade-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+}
+.sc-trade-links a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.sc-trade-links a:hover {
+  color: var(--ink);
 }

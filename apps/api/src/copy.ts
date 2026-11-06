@@ -655,12 +655,10 @@ export function walletCopyRoutes(deps: { flash: FlashClient; crowd: Crowd; ident
     const copies = await Promise.all(
       rows.map(async (r) => {
         const { fee, platform } = feesOf(BigInt(r.size))
-        const order = r.flashOrderId
-          ? await flash
-              .getOrder(r.flashOrderId, wallet)
-              .then((o) => o.order)
-              .catch(() => undefined)
+        const got = r.flashOrderId
+          ? await flash.getOrder(r.flashOrderId, wallet).catch(() => undefined)
           : undefined
+        const order = got?.order
         const coin = Number(order?.filled?.targetAmount ?? 0)
         const spent = Number(order?.filled?.contraAmount ?? 0)
         const cancel =
@@ -700,6 +698,8 @@ export function walletCopyRoutes(deps: { flash: FlashClient; crowd: Crowd; ident
                   price: spent / coin,
                   // When the buy filled: the copy's record can be written later than that.
                   at: order?.closedAt ?? order?.placedAt ?? null,
+                  // The buy's on-chain transaction, to open on the explorer.
+                  tx: got?.fills?.find((f) => f.transactionId)?.transactionId ?? null,
                 }
               : null,
         }

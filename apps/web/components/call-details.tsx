@@ -12,7 +12,15 @@ export function CallDetails({ call }: { call: Call }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>('About this call')
   const ended = !['pending', 'armed', 'live'].includes(call.status)
   const steps = [
-    { done: true, title: 'Published on Arkiv', sub: call.arkivKey, mono: true },
+    {
+      done: true,
+      title: 'Published on Arkiv',
+      sub: call.arkivKey,
+      mono: true,
+      // Anyone can open the record on Arkiv's own explorer and see it isn't ours to change.
+      href: `https://data.arkiv.network/entity/${call.arkivKey}`,
+      link: 'Verify on Arkiv',
+    },
     {
       done: Boolean(call.entryFilledAt),
       title: 'Entry filled',
@@ -75,6 +83,16 @@ export function CallDetails({ call }: { call: Call }) {
                 >
                   {s.sub}
                 </span>
+                {'href' in s && s.href && (
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-fit text-[12px] text-silver underline underline-offset-2 hover:text-ink"
+                  >
+                    {s.link} ↗
+                  </a>
+                )}
               </span>
             </li>
           ))}
