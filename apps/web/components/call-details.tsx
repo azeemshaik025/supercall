@@ -17,8 +17,8 @@ export function CallDetails({ call }: { call: Call }) {
       title: 'Published on Arkiv',
       sub: call.arkivKey,
       mono: true,
-      // Anyone can open the record on Arkiv's own explorer and see it isn't ours to change.
-      href: `https://data.arkiv.network/entity/${call.arkivKey}`,
+      // Anyone can open the record on Arkiv's explorer for Rabdi, the network it's on, and see it isn't ours to change.
+      href: `https://rabdi.explorer.arkiv.network/entity/${call.arkivKey}`,
       link: 'Verify on Arkiv',
     },
     {
