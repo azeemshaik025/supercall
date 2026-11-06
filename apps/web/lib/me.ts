@@ -36,6 +36,18 @@ const subscribe = (l: () => void) => {
   listeners.add(l)
   return () => listeners.delete(l)
 }
+// Every Supercall tab and window hears when the account changes in any of them: a profile save,
+// World ID, the caller record. Without it, a step done in one window would show as undone in
+// another until a reload.
+const channel =
+  typeof BroadcastChannel === 'undefined' ? undefined : new BroadcastChannel('supercall-account')
+
+/** Says the account changed, here and in every other Supercall tab and window. */
+export function announceAccountChange() {
+  channel?.postMessage('changed')
+  set({})
+}
+
 // Several reads can be in flight (sign-in, then an X link finishing): only the newest may land,
 // or a slow answer from before the link would overwrite the fresh one.
 let seq = 0
@@ -85,8 +97,17 @@ export function useMe() {
     const back = () => {
       if (document.visibilityState === 'visible') void reload()
     }
+    // Another window changed the account: read it again, and let this page's steps follow.
+    const heard = () => {
+      set({})
+      void reload()
+    }
     document.addEventListener('visibilitychange', back)
-    return () => document.removeEventListener('visibilitychange', back)
+    channel?.addEventListener('message', heard)
+    return () => {
+      document.removeEventListener('visibilitychange', back)
+      channel?.removeEventListener('message', heard)
+    }
   }, [reload])
 
   return { me: snapshot.me, error: snapshot.error, version: snapshot.version, reload }

@@ -5,7 +5,7 @@
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, api } from './api'
-import { useMe } from './me'
+import { announceAccountChange, useMe } from './me'
 
 type Me = {
   profile: { username: string; wallet: string; worldVerified: boolean } | null
@@ -80,11 +80,20 @@ export function useCallerSetup() {
     }
   }, [ready, authenticated, user?.twitter?.username, getAccessToken, shared.reload])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: shared.me is the signal to read again
+  // biome-ignore lint/correctness/useExhaustiveDependencies: shared.version is the signal to read again
   useEffect(() => {
     void load()
-    // Read again whenever the shared account changes.
-  }, [load, shared.me])
+    // Read again whenever the shared account changes, here or in another window.
+  }, [load, shared.version])
+
+  // While a step is still to do, check every 10 seconds: it may be done in another window.
+  useEffect(() => {
+    if (step === 'done' || step === 'signed-out') return
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') void load()
+    }, 10_000)
+    return () => clearInterval(timer)
+  }, [step, load])
 
   /** Saves the username the caller record is published under, on the account's first wallet. */
   const saveUsername = async (username: string) => {
@@ -95,6 +104,7 @@ export function useCallerSetup() {
         token: await getAccessToken(),
         body: { username: username.toLowerCase() },
       })
+      announceAccountChange()
       await shared.reload()
       await load()
     } catch (e) {
@@ -121,6 +131,7 @@ export function useCallerSetup() {
         token: await getAccessToken(),
         body: { joinedAt: draft.fields.joinedAt, signature },
       })
+      announceAccountChange()
       await shared.reload()
       await load()
     } catch (e) {
@@ -128,7 +139,9 @@ export function useCallerSetup() {
     }
   }
 
+  /** After a step done elsewhere (World ID): every window reads the account again. */
   const reload = async () => {
+    announceAccountChange()
     await shared.reload()
     await load()
   }
