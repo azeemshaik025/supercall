@@ -92,6 +92,14 @@ export function callerRoutes(arkiv: Arkiv, priceOf: PriceOf, snapshot = arkivSna
   app.get('/', async (c) => {
     const x = c.req.query('x')?.toLowerCase()
     const wallet = c.req.query('wallet')?.toLowerCase() ?? ''
+    // Neither asked for: every caller, highest SuperFactor first (the callers page and Explore).
+    if (x === undefined && c.req.query('wallet') === undefined) {
+      const s = await snapshot.read()
+      const all = s.callers.map((r) =>
+        toCaller(r, s.calls.filter((call) => call.caller === r.key).length, s.settlementsOf(r.key)),
+      )
+      return c.json({ callers: all.sort((a, b) => b.superFactor - a.superFactor) })
+    }
     if (x !== undefined && !/^\w{1,15}$/.test(x))
       return c.json({ code: 'bad_x', detail: 'x: an X username' }, 400)
     if (x === undefined && !isWallet(wallet))
