@@ -44,61 +44,49 @@ const outcome = {
   E: ['Ended', 'muted'],
 } as const
 
-/** Under a caller's follow counts: their record on Supercall, in X's own look. */
+/**
+ * Under a caller's follow counts, in the same look: their record on Supercall as one wrapping
+ * row of counts, the last ten calls, and a link to all of them.
+ */
 export function ProfilePanel({ caller, web }: { caller: Caller; web: string }) {
   const settled = caller.lastTen.length > 0
   const stats: [string, string][] = [
-    ['Calls', caller.callCount.toLocaleString('en-US')],
-    ['Earned', usd(caller.earnedUsd)],
-    ['Paid back to followers', usd(caller.returnedToFollowersUsd)],
-    ['Followers in profit', settled ? `${caller.followersProfitablePct}%` : '–'],
+    [caller.callCount.toLocaleString('en-US'), caller.callCount === 1 ? 'Call' : 'Calls'],
+    [usd(caller.earnedUsd), 'Earned'],
+    [usd(caller.returnedToFollowersUsd), 'Paid back'],
+    ...(settled
+      ? [[`${caller.followersProfitablePct}%`, 'Followers in profit'] as [string, string]]
+      : []),
   ]
   return (
-    <section className="sc-panel">
-      <header className="sc-panel-head">
-        <span className="sc-panel-brand">
-          <Mark />
-          Supercall
-          {caller.verified && <span className="sc-human">Verified human</span>}
+    <section className="sc-panel" aria-label="Supercall record">
+      {stats.map(([value, label]) => (
+        <span key={label} className="sc-pstat">
+          <b>{value}</b> {label}
         </span>
-        <a
-          className="sc-panel-link"
-          href={`${web}/u/${caller.handle}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          View calls
-        </a>
-      </header>
-
-      <div className="sc-panel-score">
-        <span className="sc-sf">
-          <SuperFactor value={caller.superFactor} />
-        </span>
+      ))}
+      {settled ? (
         <span className="sc-last" title="Last ten calls, newest first">
-          {settled ? (
-            caller.lastTen.map((o, i) => (
-              <i
-                // biome-ignore lint/suspicious/noArrayIndexKey: a fixed list, newest first
-                key={i}
-                className={outcome[o][1]}
-                title={outcome[o][0]}
-              />
-            ))
-          ) : (
-            <span className="sc-new">No settled calls yet</span>
-          )}
+          {caller.lastTen.map((o, i) => (
+            <i
+              // biome-ignore lint/suspicious/noArrayIndexKey: a fixed list, newest first
+              key={i}
+              className={outcome[o][1]}
+              title={outcome[o][0]}
+            />
+          ))}
         </span>
-      </div>
-
-      <dl className="sc-stats">
-        {stats.map(([label, value]) => (
-          <div key={label}>
-            <dd>{value}</dd>
-            <dt>{label}</dt>
-          </div>
-        ))}
-      </dl>
+      ) : (
+        <span className="sc-pstat sc-new">No settled calls yet</span>
+      )}
+      <a
+        className="sc-panel-link"
+        href={`${web}/u/${caller.handle}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        View calls
+      </a>
     </section>
   )
 }
