@@ -12,7 +12,7 @@ const SWAP = parseAbiItem(
 // Arc mainnet refuses log ranges over 10,000 blocks.
 const PAGE = 10_000n
 // Arc's public RPC rate-limits bursts.
-const BETWEEN_PAGES = 200
+const BETWEEN_PAGES = 1_000
 
 export async function* pages(from: bigint, to: bigint) {
   for (let start = from; start <= to; start += PAGE) {

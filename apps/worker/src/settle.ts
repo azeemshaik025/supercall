@@ -94,7 +94,7 @@ function oneBatch(call: Hex, inputs: Inputs, from: number, to: number, inputHash
 
 export function createSettler(chain: HisaabChain, privateKey: Hex) {
   const account = privateKeyToAccount(privateKey)
-  const transport = http(chain.rpcUrl, { retryCount: 5, retryDelay: 1_000 })
+  const transport = http(chain.rpcUrl, { timeout: 15_000, retryCount: 3, retryDelay: 2_000 })
   const reader = createPublicClient({ chain: viemChain(chain), transport })
   const wallet = createWalletClient({ account, chain: viemChain(chain), transport })
 
