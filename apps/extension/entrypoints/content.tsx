@@ -8,7 +8,7 @@ import { ProfileBadge, ProfilePanel } from '../components/profile'
 import type { Caller } from '../lib/caller'
 import '../components/card.css'
 import { createQueue } from '../lib/queue'
-import { findProfile, findTweets, headerSlot, viewer } from '../lib/x-page'
+import { contentInset, findProfile, findTweets, headerSlot, viewer } from '../lib/x-page'
 import type { Message } from './background'
 
 declare const __WEB_ORIGIN__: string
@@ -81,6 +81,17 @@ export default defineContentScript({
         ...render(<Card answer={answer} web={__WEB_ORIGIN__} onCopy={copy} mine={mine} />),
       })
       ui.mount()
+      // Line the card up with the tweet's content, past the avatar in a timeline, and keep it
+      // lined up as X resizes the column.
+      const align = () => {
+        if (!ui.shadowHost.isConnected) return sizes.disconnect()
+        const inset = contentInset(article)
+        if (inset !== undefined) ui.shadowHost.style.setProperty('--sc-inset', `${inset}px`)
+      }
+      align()
+      const sizes = new ResizeObserver(align)
+      sizes.observe(article)
+      ctx.onInvalidated(() => sizes.disconnect())
       return track(ui)
     }
 
