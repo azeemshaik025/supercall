@@ -1,15 +1,20 @@
 'use client'
 
+import { usePrivy } from '@privy-io/react-auth'
+import { MIN_TARGET_DISTANCE } from '@supercall/core'
 import Link from 'next/link'
 import { type CSSProperties, useState } from 'react'
+import { ApiError } from '@/lib/api'
+import { COPY_STEP, type Copied, type CopyStep, orderState, useCopies, useCopy } from '@/lib/copy'
 import { statusLabel } from '@/lib/data'
 import { price, signedUsd, usd } from '@/lib/format'
+import { useMe, useUsdc, walletOf } from '@/lib/me'
 import { estimate, inBand } from '@/lib/money'
 import type { Call } from '@/lib/types'
 import { cx, Info } from './ui'
 
 const STOPS = [0, 25, 50, 75, 100] as const
-const MIN_TARGET = 0.02
+const TONE = { good: 'text-good', warn: 'text-warn', bad: 'text-bad', muted: 'text-muted' }
 
 function Lock() {
   return (
@@ -67,22 +72,21 @@ function Note({
   )
 }
 
-export function CopyPanel({
-  call,
-  balance = 0,
-  popup = false,
-}: {
-  call: Call
-  balance?: number
-  popup?: boolean
-}) {
+export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean }) {
+  const { ready, authenticated, login } = usePrivy()
+  const { me } = useMe()
+  const wallet = authenticated ? walletOf(me) : undefined
+  const balance = useUsdc(wallet) ?? 0
+  const copy = useCopy()
+  const { copies } = useCopies(wallet)
+  const mine = copies?.filter((c) => c.call === call.id) ?? []
   const [pctOfBalance, setPct] = useState<number | null>(null)
-  const [typed, setTyped] = useState('1,000')
-  const [bought, setBought] = useState<number | null>(null)
+  const [typed, setTyped] = useState('100')
+  const [bought, setBought] = useState<(Copied & { size: number }) | null>(null)
+  const [step, setStep] = useState<CopyStep | null>(null)
+  const [error, setError] = useState<string>()
   const size =
-    pctOfBalance === null
-      ? Number(typed.replace(/,/g, '')) || 0
-      : (balance * pctOfBalance) / 100
+    pctOfBalance === null ? Number(typed.replace(/,/g, '')) || 0 : (balance * pctOfBalance) / 100
   const fill = pctOfBalance ?? Math.min(100, balance > 0 ? (size / balance) * 100 : 0)
   const est = estimate(call, size)
   const long = call.direction === 'long'
@@ -129,7 +133,7 @@ export function CopyPanel({
       </Shell>
     )
   }
-  if (Math.abs(call.target - call.entry) / call.entry < MIN_TARGET) {
+  if (Math.abs(call.target - call.entry) / call.entry < MIN_TARGET_DISTANCE) {
     return (
       <Shell>
         <Note
@@ -160,17 +164,26 @@ export function CopyPanel({
     )
   }
   if (bought !== null) {
+    const live = mine.find((c) => c.payFeeTx === bought.payFeeTx)
+    const st = orderState(live?.status, !!live?.fill)
     return (
       <Shell>
         <div className="flex flex-col items-center gap-2.5 text-center">
           <span className="grid size-12 place-items-center bg-good-soft text-[22px] text-good">
             {'✓'}
           </span>
-          <h3 className="text-[18px] font-medium">Bought</h3>
+          <h3 className="text-[18px] font-medium">Copied</h3>
           <p className="text-[13px] text-muted">
-            {usd(bought)} of {call.asset}, copying @{call.caller}
+            {usd(bought.size)} of {call.asset}, copying @{call.caller}
           </p>
           <dl className="mt-2 w-full space-y-2.5 text-left text-[13px]">
+            <div className="flex justify-between">
+              <dt className="text-muted">Order</dt>
+              <dd className={TONE[st.tone]}>
+                {st.label}
+                {live?.fill && ` at ${price(live.fill.price)}`}
+              </dd>
+            </div>
             <div className="flex justify-between">
               <dt className="text-muted">Stop</dt>
               <dd className="text-bad">{price(call.stop)}</dd>
@@ -187,6 +200,7 @@ export function CopyPanel({
           <div className="mt-3 grid w-full grid-cols-2 gap-2">
             <Link
               href="/me"
+              target={popup ? '_blank' : undefined}
               className="flex h-11 items-center justify-center border border-line-strong bg-sidebar text-[13px]"
             >
               View position
@@ -203,6 +217,33 @@ export function CopyPanel({
       </Shell>
     )
   }
+
+  const go = async () => {
+    if (!wallet) return
+    setError(undefined)
+    try {
+      const done = await copy(call.id, Math.round(size * 100) / 100, wallet, setStep)
+      setBought({ ...done, size })
+    } catch (e) {
+      const msg = e instanceof ApiError || e instanceof Error ? e.message : String(e)
+      // Closing the wallet prompt isn't an error worth showing in red.
+      setError(/reject|denied|cancel/i.test(msg) ? 'Cancelled in your wallet' : msg)
+    } finally {
+      setStep(null)
+    }
+  }
+  const tooSmall = size > 0 && size < 1
+  const label = !ready
+    ? 'Loading…'
+    : !authenticated
+      ? 'Sign in to copy'
+      : step
+        ? COPY_STEP[step]
+        : size > balance
+          ? 'More than your balance'
+          : tooSmall
+            ? 'At least $1'
+            : `Copy long ${call.asset}`
 
   return (
     <Shell>
@@ -299,14 +340,23 @@ export function CopyPanel({
             <dd>{usd(est.fee)}</dd>
           </div>
         </dl>
+        {error && <p className="text-[12px] text-bad">{error}</p>}
         <button
           type="button"
-          disabled={size <= 0 || size > balance}
-          onClick={() => setBought(size)}
-          className="h-[46px] cursor-pointer bg-good text-[14px] font-semibold text-bg hover:brightness-110"
+          disabled={
+            authenticated && (step !== null || size <= 0 || tooSmall || size > balance || !wallet)
+          }
+          onClick={() => (authenticated ? void go() : login())}
+          className="h-[46px] cursor-pointer bg-good text-[14px] font-semibold text-bg hover:brightness-110 disabled:cursor-default disabled:opacity-60 disabled:hover:brightness-100"
         >
-          {size > balance ? 'More than your balance' : `Copy long ${call.asset}`}
+          {label}
         </button>
+        {mine.length > 0 && (
+          <Link href="/me" className="text-center text-[12px] text-muted hover:text-ink">
+            You’ve copied this {mine.length === 1 ? 'once' : `${mine.length} times`} ·{' '}
+            {orderState(mine[0]?.status, !!mine[0]?.fill).label} · Portfolio
+          </Link>
+        )}
       </div>
     </Shell>
   )
