@@ -28,6 +28,10 @@ forge test
 
 Followers pay with one signed Permit2 transfer. Each follower must approve Permit2 for USDC once before her first payment. Anyone, usually the backend, can submit the signed payment.
 
+## Caller record
+
+`callerStats(callerId)` is each caller's public record as Hisaab settled it: how many calls ended Right, Above entry, Wrong or refunded (an expired call counts as refunded), the filled volume copied into them and the part on Wrong calls, the fees the caller kept, and the credit their fund paid to followers. Volumes and fees add up as batches settle; an ending counts once, when its call is Done. `CallerStatsChanged(caller)` fires then. SuperFactor itself is computed off-chain (`packages/core`); this record is the on-chain check on it.
+
 ## Testing note
 
 A Foundry fork cannot run Arc USDC's system contracts, so the real USDC transfer was checked live on Arc Testnet instead of in the unit tests. The proof transactions are listed in the deployments file.
