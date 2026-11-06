@@ -27,16 +27,14 @@ export function CallersTable({ callers, calls }: { callers: Caller[]; calls: Cal
   const rows = useMemo(() => {
     const n = q.trim().toLowerCase()
     return [...callers]
-      .filter(
-        (c) => !n || c.handle.includes(n) || c.displayName.toLowerCase().includes(n),
-      )
+      .filter((c) => !n || c.handle.includes(n) || c.displayName.toLowerCase().includes(n))
       .sort(by[sort])
   }, [callers, sort, q])
 
   return (
     <section aria-label="Callers table" className="surface-card">
       <div className="flex flex-wrap items-center gap-2 px-4 py-3.5">
-        <label className="flex h-9 max-w-80 flex-[1_1_220px] items-center gap-2 border border-line-strong bg-sidebar px-3">
+        <label className="flex h-9 max-w-80 flex-[1_1_220px] items-center gap-2 border border-line-strong bg-sidebar px-3 focus-within:border-steel">
           <span className="sr-only">Search callers</span>
           <input
             type="search"

@@ -85,7 +85,16 @@ function Note({
   )
 }
 
-export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean }) {
+export function CopyPanel({
+  call,
+  popup = false,
+  size: startSize,
+}: {
+  call: Call
+  popup?: boolean
+  /** The amount to start at, e.g. the size typed in the extension before opening this. */
+  size?: number
+}) {
   const { ready, authenticated, login } = usePrivy()
   const { me } = useMe()
   const wallet = authenticated ? walletOf(me) : undefined
@@ -94,7 +103,7 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
   const { copies } = useCopies(wallet)
   const mine = copies?.filter((c) => c.call === call.id) ?? []
   const [pctOfBalance, setPct] = useState<number | null>(null)
-  const [typed, setTyped] = useState('100')
+  const [typed, setTyped] = useState(startSize ? String(startSize) : '100')
   const [bought, setBought] = useState<(Copied & { size: number }) | null>(null)
   const [step, setStep] = useState<CopyStep | null>(null)
   const [error, setError] = useState<string>()
@@ -126,6 +135,20 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
   // supercall.
   if (me?.profile?.username && me.profile.username === call.caller) {
     return <GoSuper call={call} wallet={me.profile.wallet} open={open} />
+  }
+  // Past its deadline but not settled yet: the status says open until Hisaab settles it.
+  if (!ENDED.includes(call.status) && Date.parse(call.expiresAt) <= Date.now()) {
+    return (
+      <Shell>
+        <div className="flex flex-col gap-1">
+          <span className="text-[12px] text-muted">Ended</span>
+          <span className="text-[18px] font-medium">Deadline passed · settling</span>
+          <span className="text-[13px] text-muted">
+            Copying is closed. Hisaab settles it on Arc: fees kept or refunded by how it ended.
+          </span>
+        </div>
+      </Shell>
+    )
   }
   if (ENDED.includes(call.status)) {
     const st = statusLabel[call.status]
@@ -287,7 +310,7 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
               {wallet && <DepositButton wallet={wallet} onDone={() => {}} />}
             </span>
           </span>
-          <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5">
+          <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5 focus-within:border-steel">
             <input
               type="text"
               inputMode="decimal"
@@ -480,7 +503,7 @@ function GoSuper({ call, wallet, open }: { call: Call; wallet: string; open: boo
               {<DepositButton wallet={wallet} onDone={() => {}} />}
             </span>
           </span>
-          <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5">
+          <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5 focus-within:border-steel">
             <input
               type="text"
               inputMode="decimal"

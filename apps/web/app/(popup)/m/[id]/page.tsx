@@ -6,8 +6,16 @@ import { getCall, getCaller } from '@/lib/data'
 import { pct, price } from '@/lib/format'
 import { moveVsEntry } from '@/lib/money'
 
-export default async function CopyPopup({ params }: { params: Promise<{ id: string }> }) {
+export default async function CopyPopup({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ size?: string }>
+}) {
   const { id } = await params
+  // The size typed in the extension's panel, if it opened this window.
+  const size = Number((await searchParams).size)
   const call = await getCall(id)
   if (!call) notFound()
   const caller = await getCaller(call.caller)
@@ -51,7 +59,7 @@ export default async function CopyPopup({ params }: { params: Promise<{ id: stri
           </div>
         </div>
       </section>
-      <CopyPanel call={call} popup />
+      <CopyPanel call={call} popup size={size > 0 ? size : undefined} />
     </>
   )
 }

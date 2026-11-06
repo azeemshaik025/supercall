@@ -102,7 +102,7 @@ export function ProfileForm() {
         <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-[12px] text-muted">Username</span>
-            <span className="flex h-[42px] items-center border border-line-strong bg-sidebar px-3">
+            <span className="flex h-[42px] items-center border border-line-strong bg-sidebar px-3 focus-within:border-steel">
               <span className="text-faint">@</span>
               <input
                 value={username}
@@ -122,7 +122,7 @@ export function ProfileForm() {
                 setName(e.target.value)
                 setSaved(false)
               }}
-              className="h-[42px] border border-line-strong bg-sidebar px-3 text-[14px] outline-none"
+              className="h-[42px] border border-line-strong bg-sidebar px-3 text-[14px] outline-none focus:border-steel"
             />
           </label>
         </div>

@@ -1,6 +1,6 @@
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { rajsCall, suggestedStopCall } from '../fixtures/calls'
 import type { Call } from '../lib/lookup'
 import { Card, type Shown } from './card'
@@ -35,6 +35,13 @@ function draw(answer: Shown, mine = false) {
 }
 
 describe('Card', () => {
+  // The fixtures' calls are open on Oct 26, 2026: judge them then, not on today's date.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-26T12:00:00Z') })
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
   it("shows Raj's call: coin, direction, levels, deadline, status and both bands", () => {
     const { container, text } = draw(callOf(rajsCall))
     for (const shown of ['WETH', 'long', '3,000', '2,850', '3,400', 'Live', 'medium', 'low'])

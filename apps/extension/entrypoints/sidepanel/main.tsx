@@ -16,6 +16,7 @@ import type { Message } from '../background'
 
 declare const __API_URL__: string
 declare const __WEB_ORIGIN__: string
+declare const __BUILD__: string
 
 // The app's chain (CHAIN): where Hisaab holds fees and Flash trades.
 const client = createPublicClient({ chain: viemChain(), transport: http() })
@@ -314,7 +315,9 @@ type MyCopy = {
   sizeUsd: number
   status: string | null
   closed: { gotUsd: number } | null
-  fill: { coin: number; price: number } | null
+  fill: { coin: number; price: number; spentUsd: number } | null
+  /** When the copy was made. */
+  at: string
 }
 const WORKING = ['ORDER_STATUS_PENDING', 'ORDER_STATUS_ACCEPTED', 'ORDER_STATUS_PARTIALLY_FILLED']
 /** A copy's order in words, with the panel's tone class. */
@@ -328,17 +331,20 @@ function copyState(c: MyCopy) {
 }
 
 /**
- * Your copies of one call, read every 5 seconds while the panel shows it: a copy signed in the
- * Supercall window shows up here, and its order moves from waiting to filled, without a reload.
+ * All your copies, newest first, read every 5 seconds while the panel is open: a copy signed in
+ * the Supercall window shows up here, and its order moves from waiting to filled, without a reload.
  */
-function useMyCopies(token: string | null, wallet: string | undefined, callId: string) {
+function useWalletCopies(token: string | null, wallet: string | undefined) {
   const [copies, setCopies] = useState<MyCopy[]>([])
   useEffect(() => {
     if (!token || !wallet) return setCopies([])
     let live = true
     const read = () =>
       api<{ copies: MyCopy[] }>(`/wallets/${wallet}/copies`, { token })
-        .then((r) => live && setCopies(r.copies.filter((c) => c.call === callId)))
+        .then(
+          (r) =>
+            live && setCopies([...r.copies].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))),
+        )
         .catch(() => {})
     void read()
     const timer = setInterval(read, 5000)
@@ -346,23 +352,160 @@ function useMyCopies(token: string | null, wallet: string | undefined, callId: s
       live = false
       clearInterval(timer)
     }
-  }, [token, wallet, callId])
+  }, [token, wallet])
   return copies
+}
+
+/** The calls behind some copies, with their live price, read again every 5 seconds. */
+function useLiveCalls(ids: string[]) {
+  const [calls, setCalls] = useState<Record<string, Call>>({})
+  const key = [...new Set(ids)].sort().join(',')
+  useEffect(() => {
+    if (!key) return setCalls({})
+    let live = true
+    const read = () =>
+      Promise.all(
+        key.split(',').map((id) =>
+          fetch(`${__API_URL__}/calls/${encodeURIComponent(id)}`)
+            .then((r) => (r.ok ? (r.json() as Promise<Call>) : null))
+            .catch(() => null),
+        ),
+      ).then((list) => {
+        if (!live) return
+        setCalls((old) => {
+          const next = { ...old }
+          for (const c of list) if (c) next[c.id] = c
+          return next
+        })
+      })
+    void read()
+    const timer = setInterval(read, 5000)
+    return () => {
+      live = false
+      clearInterval(timer)
+    }
+  }, [key])
+  return calls
+}
+
+/** "just now", "4m ago", "2h ago", "3d ago". */
+function ago(iso: string, now = Date.now()) {
+  const s = Math.max(0, (now - Date.parse(iso)) / 1000)
+  if (s < 45) return 'just now'
+  if (s < 3600) return `${Math.round(s / 60)}m ago`
+  if (s < 86_400) return `${Math.round(s / 3600)}h ago`
+  return `${Math.round(s / 86_400)}d ago`
+}
+
+/** What a copy has made so far: on the sale once sold, else on the live price. */
+function pnlOf(c: MyCopy, call: Call | undefined) {
+  if (!c.fill || !(c.fill.spentUsd > 0)) return null
+  const value = c.closed?.gotUsd ? c.closed.gotUsd : call ? c.fill.coin * call.price : null
+  if (value === null) return null
+  const usd = value - c.fill.spentUsd
+  return { usd, pct: usd / c.fill.spentUsd }
+}
+const signed = (n: number) => `${n >= 0 ? '+' : '−'}${usd(Math.abs(n))}`
+
+const RECENT = 5
+/** Your latest copies, newest on top: when you copied, the fill, the live price and P&L. */
+function Recent({ copies }: { copies: MyCopy[] }) {
+  const latest = copies.slice(0, RECENT)
+  const calls = useLiveCalls(latest.map((c) => c.call))
+  if (latest.length === 0) return null
+  return (
+    <section className="sc-box">
+      <div className="sc-row">
+        <span className="sc-label">Recent copies</span>
+        <button type="button" className="sc-link" onClick={() => openSite('/me')}>
+          Portfolio
+        </button>
+      </div>
+      {latest.map((c) => {
+        const call = calls[c.call]
+        const st = copyState(c)
+        const pnl = pnlOf(c, call)
+        return (
+          <a
+            key={c.payFeeTx}
+            className="sc-trade"
+            href={`${__WEB_ORIGIN__}/c/${encodeURIComponent(c.call)}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <div className="sc-row">
+              <strong className="sc-clip">
+                {call ? (
+                  <>
+                    {call.asset}
+                    <span className="sc-muted">/USDC</span>{' '}
+                    <span className={call.direction === 'long' ? 'sc-good' : 'sc-bad'}>
+                      {call.direction === 'long' ? 'Long' : 'Short'}
+                    </span>
+                  </>
+                ) : (
+                  'Call'
+                )}
+              </strong>
+              <span className="sc-muted sc-small" title={new Date(c.at).toLocaleString()}>
+                {ago(c.at)}
+              </span>
+            </div>
+            <div className="sc-row sc-small">
+              <span className="sc-muted sc-clip">
+                {call ? `@${call.caller} · ` : ''}
+                {usd(c.sizeUsd)}
+              </span>
+              <span className={st.tone}>{st.label}</span>
+            </div>
+            {c.fill && (
+              <div className="sc-trade-nums">
+                <div>
+                  <span className="sc-label">Bought</span>
+                  <span className="sc-mono">{c.fill.price.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="sc-label">{c.closed ? 'Sold' : 'Now'}</span>
+                  <span className="sc-mono">
+                    {c.closed?.gotUsd
+                      ? (c.closed.gotUsd / c.fill.coin).toLocaleString(undefined, {
+                          maximumFractionDigits: 2,
+                        })
+                      : call
+                        ? call.price.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                        : '…'}
+                  </span>
+                </div>
+                <div>
+                  <span className="sc-label">P&amp;L</span>
+                  <span
+                    className={`sc-mono ${pnl === null ? 'sc-muted' : pnl.usd >= 0 ? 'sc-good' : 'sc-bad'}`}
+                  >
+                    {pnl === null
+                      ? '–'
+                      : `${signed(pnl.usd)} ${pnl.pct >= 0 ? '+' : '−'}${Math.abs(pnl.pct * 100).toFixed(2)}%`}
+                  </span>
+                </div>
+              </div>
+            )}
+          </a>
+        )
+      })}
+    </section>
+  )
 }
 
 function Copy({
   id,
   call,
-  token,
-  wallet,
+  copies,
 }: {
   id: string
   call: Call | null | undefined
-  token: string | null
-  wallet: string | undefined
+  copies: MyCopy[]
 }) {
   const [size, setSize] = useState('100')
-  const mine = useMyCopies(token, wallet, id)
+  const mine = copies.filter((c) => c.call === id)
   const dollars = Number(size)
   const fee = Number.isFinite(dollars) && dollars > 0 ? feeOf(toMicro(dollars)) : undefined
   if (call === undefined) return <section className="sc-box sc-muted">Loading the call…</section>
@@ -421,7 +564,8 @@ function Copy({
         onClick={() =>
           browser.runtime.sendMessage({
             type: 'open',
-            path: `/m/${encodeURIComponent(id)}`,
+            // The size typed here carries over, so the copy window opens at it.
+            path: `/m/${encodeURIComponent(id)}${dollars > 0 ? `?size=${encodeURIComponent(String(dollars))}` : ''}`,
           } satisfies Message)
         }
       >
@@ -457,6 +601,7 @@ function Panel() {
   const { me, caller, error } = useAccount(session.token, tick)
   const pending = usePending()
   const call = useCall(pending)
+  const copies = useWalletCopies(session.token, me?.profile?.wallet ?? me?.account.wallets[0])
   return (
     <main className="sc-shell">
       <header className="sc-head">
@@ -514,16 +659,15 @@ function Panel() {
         )}
         {error && <p className="sc-bad sc-small">Couldn’t read your account: {error}</p>}
         {pending ? (
-          <Copy
-            id={pending.id}
-            call={call}
-            token={session.token}
-            wallet={me?.profile?.wallet ?? me?.account.wallets[0]}
-          />
+          <Copy id={pending.id} call={call} copies={copies} />
         ) : (
           <p className="sc-hint">Tap Copy under a call on X to copy it here.</p>
         )}
+        {session.token && me && <Recent copies={copies} />}
       </div>
+      <p className="sc-build" title="The build running now">
+        Build {__BUILD__}
+      </p>
       <div className={me ? 'sc-dither sc-quiet' : 'sc-dither'} aria-hidden="true" />
     </main>
   )
