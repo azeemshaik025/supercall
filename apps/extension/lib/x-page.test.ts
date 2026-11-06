@@ -70,6 +70,14 @@ describe('findProfile', () => {
     }
   })
 
+  it('finds the same parts on logged-out X, which has no test ids', () => {
+    document.body.innerHTML = `<main>${header.replace(/ data-testid="[^"]*"/g, '')}
+      <article><span>@synthetic_raj</span></article></main>`
+    const profile = findProfile(document, '/synthetic_raj')
+    expect(profile?.name.id).toBe('name')
+    expect(profile?.after.id).toBe('counts')
+  })
+
   it('finds nothing on a tweet, or where there is no profile header', () => {
     document.body.innerHTML = header
     expect(findProfile(document, '/synthetic_raj/status/1850000000000000001')).toBeUndefined()

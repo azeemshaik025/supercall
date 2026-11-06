@@ -52,10 +52,25 @@ const isRow = (el: Element) => {
   return style.display.includes('flex') && !style.flexDirection.startsWith('column')
 }
 
+/**
+ * The header part with the name and "@handle". Logged-in X marks it; logged-out X has no test ids,
+ * so it's the part holding the "@handle", outside any tweet, whose siblings hold the follow counts.
+ */
+function profileHeader(doc: Document, x: string) {
+  const marked = doc.querySelector<HTMLElement>(profileName)
+  if (marked) return marked
+  const handle = `@${x.toLowerCase()}`
+  let el: HTMLElement | null | undefined = [...doc.querySelectorAll<HTMLElement>('main span')].find(
+    (s) => !s.closest(tweet) && s.textContent?.trim().toLowerCase() === handle,
+  )
+  while (el?.parentElement && !el.parentElement.querySelector(followCounts)) el = el.parentElement
+  return el?.parentElement ? el : undefined
+}
+
 /** The profile on screen, if this page is one. */
 export function findProfile(doc: Document, path: string): Profile | undefined {
   const [, x] = path.match(profilePath) ?? []
-  const header = doc.querySelector<HTMLElement>(profileName)
+  const header = x ? profileHeader(doc, x) : undefined
   if (!x || !header) return undefined
   // The "@handle" line; the name block sits just before it.
   const at = [...header.querySelectorAll('span')].find(
