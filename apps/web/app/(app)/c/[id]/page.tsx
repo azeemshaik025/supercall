@@ -7,7 +7,6 @@ import { CallerCard } from '@/components/caller-card'
 import { CopyPanel } from '@/components/copy-panel'
 import { ShareCall } from '@/components/share-call'
 import { cx, SideTag, TokenIcon, VerifiedBadge } from '@/components/ui'
-import { YourPosition } from '@/components/your-position'
 import { API } from '@/lib/api'
 import { getCall, getCaller, getCandles, statusLabel } from '@/lib/data'
 import { ago, pct, price, timeLeft } from '@/lib/format'
@@ -143,7 +142,6 @@ export default async function CallPage({ params }: Props) {
             </div>
             <CallChart call={call} candles={candles} />
           </section>
-          <YourPosition call={call} />
           <CallDetails call={call} />
         </div>
         <aside className="flex min-w-0 flex-[1_1_320px] flex-col gap-5">
