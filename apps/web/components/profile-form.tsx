@@ -1,9 +1,13 @@
 'use client'
 
+import { usePrivy } from '@privy-io/react-auth'
 import Link from 'next/link'
-import { useState } from 'react'
-import { me } from '@/lib/data'
+import { useEffect, useState } from 'react'
+import { ApiError, api } from '@/lib/api'
+import { useCallerSetup, usernameFromX } from '@/lib/caller'
+import { useMe } from '@/lib/me'
 import { PageTitle } from './ui'
+import { VerifyWithWorld } from './world-id'
 
 function Row({
   icon,
@@ -31,6 +35,15 @@ function Row({
 const ok = (t: string) => (
   <span className="bg-good-soft px-2 py-0.5 text-[12px] text-good">{t}</span>
 )
+const action = (label: string, onClick: () => void) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="h-8 cursor-pointer border border-line-strong bg-sidebar px-3 text-[12px] hover:bg-surface-2"
+  >
+    {label}
+  </button>
+)
 const tile = (c: React.ReactNode) => (
   <span className="grid size-9 shrink-0 place-items-center border border-line-strong bg-surface-2">
     {c}
@@ -38,9 +51,44 @@ const tile = (c: React.ReactNode) => (
 )
 
 export function ProfileForm() {
-  const [username, setUsername] = useState(me.handle)
-  const [name, setName] = useState('Rakesh')
+  const { getAccessToken, linkTwitter, linkEmail } = usePrivy()
+  const { me, error, reload } = useMe()
+  const caller = useCallerSetup()
+  const [username, setUsername] = useState('')
+  const [name, setName] = useState('')
   const [saved, setSaved] = useState(false)
+  const [problem, setProblem] = useState<string>()
+  const [saving, setSaving] = useState(false)
+  // Filled from the account once it loads: the saved profile, else the X handle as a suggestion.
+  useEffect(() => {
+    if (!me) return
+    setUsername(me.profile?.username ?? usernameFromX(me.account.x?.username) ?? '')
+    setName(me.profile?.displayName ?? me.account.x?.name ?? '')
+  }, [me])
+  const save = async () => {
+    setSaving(true)
+    setProblem(undefined)
+    try {
+      await api('/me', {
+        method: 'PUT',
+        token: await getAccessToken(),
+        body: { username: username.toLowerCase(), displayName: name || undefined },
+      })
+      setSaved(true)
+      await reload()
+      await caller.reload()
+    } catch (e) {
+      setProblem(e instanceof ApiError ? e.message : String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+  if (me === undefined)
+    return <p className="text-[13px] text-muted">{error ?? 'Loading your profile…'}</p>
+  if (!me) return null
+  const profile = me.profile
+  const x = me.account.x
+  const wallet = profile?.wallet ?? me.account.wallets[0]
   return (
     <div className="max-w-[760px] space-y-5">
       <PageTitle
@@ -78,15 +126,22 @@ export function ProfileForm() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setSaved(true)}
-            className="btn-cta h-[38px] cursor-pointer px-4 text-[13px]"
+            onClick={() => void save()}
+            disabled={saving || username.length < 3}
+            className="btn-cta h-[38px] cursor-pointer px-4 text-[13px] disabled:opacity-50"
           >
-            Save
+            {saving ? 'Saving…' : profile ? 'Save' : 'Create profile'}
           </button>
-          {saved && <span className="text-[13px] text-good">Saved</span>}
-          <Link href={`/u/${me.handle}`} className="ml-auto text-[13px] text-steel hover:text-ink">
-            View public page
-          </Link>
+          {saved && !problem && <span className="text-[13px] text-good">Saved</span>}
+          {problem && <span className="text-[13px] text-bad">{problem}</span>}
+          {profile && (
+            <Link
+              href={`/u/${profile.username}`}
+              className="ml-auto text-[13px] text-steel hover:text-ink"
+            >
+              View public page
+            </Link>
+          )}
         </div>
       </section>
       <section aria-label="Connections" className="surface-card">
@@ -97,14 +152,28 @@ export function ProfileForm() {
             </svg>,
           )}
           title="X account"
-          sub={`Your posts on X are read as calls. Linked as @${me.xHandle}`}
-          right={ok('Linked')}
+          sub={
+            x
+              ? `Your posts on X are read as calls once you’re a caller. Linked as @${x.username}`
+              : 'Link X so your posts there can be read as calls.'
+          }
+          right={x ? ok('Linked') : action('Link X', () => linkTwitter())}
         />
         <Row
           icon={<img src="/brand/verified.svg" alt="" className="size-9" />}
           title="World ID"
           sub="Proves you’re one human, so a bad run can’t be escaped with a new account. Needed to publish."
-          right={ok('Verified')}
+          right={
+            me.worldVerified ? (
+              ok('Verified')
+            ) : profile ? (
+              <span className="w-56">
+                <VerifyWithWorld wallet={profile.wallet} onVerified={() => void caller.reload()} />
+              </span>
+            ) : (
+              <span className="text-[12px] text-muted">Create your profile first</span>
+            )
+          }
         />
         <Row
           icon={tile(
@@ -122,32 +191,32 @@ export function ProfileForm() {
             </svg>,
           )}
           title="Email"
-          sub="For notices when a call you copied ends."
-          right={
-            <button
-              type="button"
-              className="h-8 cursor-pointer border border-line-strong bg-sidebar px-3 text-[12px]"
-            >
-              Add email
-            </button>
-          }
+          sub={me.account.email ?? 'For notices when a call you copied ends.'}
+          right={me.account.email ? ok('Linked') : action('Add email', () => linkEmail())}
         />
         <Row
-          icon={<img src="/wallets/metamask.svg" alt="" className="size-9" />}
+          icon={tile(<span className="font-mono text-[11px] text-silver">0x</span>)}
           title="Publishing wallet"
           sub={
             <>
               Your own trades on a call come from here, so followers can check them.{' '}
-              <span className="font-mono text-silver">{me.address}</span>
+              <span className="font-mono text-silver">{wallet ?? 'Not created yet'}</span>
             </>
           }
+          right={null}
+        />
+        <Row
+          icon={tile(<span className="font-mono text-[11px] text-silver">AR</span>)}
+          title="Caller record"
+          sub="Your record on Arkiv: nobody can edit it, us included. Your calls are scored against it."
           right={
-            <button
-              type="button"
-              className="h-8 cursor-pointer border border-line-strong bg-sidebar px-3 text-[12px]"
-            >
-              Change
-            </button>
+            caller.step === 'done' ? (
+              ok('On Arkiv')
+            ) : caller.step === 'record' ? (
+              action('Sign record', () => void caller.signRecord())
+            ) : (
+              <span className="text-[12px] text-muted">After World ID</span>
+            )
           }
         />
       </section>
