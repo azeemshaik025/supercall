@@ -2,13 +2,13 @@
 
 import Link from 'next/link'
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
+import { loadCandles } from '@/lib/api'
 import { pct, price, usd } from '@/lib/format'
 import { CALL_FEE, callerCut } from '@/lib/money'
 import type { Candle, Market } from '@/lib/types'
 import { CandleChart, type Level } from './candle-chart'
 import { cx, Info, Segmented, TokenIcon } from './ui'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 const TIMEFRAMES = ['15m', '1h', '4h', '1d'] as const
 const EXPIRIES = ['4h', '24h', '3d', '7d'] as const
 const ZONE_MIN = 0.1
@@ -54,10 +54,9 @@ export function Composer({ markets }: { markets: Market[] }) {
     const address = market?.address
     if (!address) return
     let stale = false
-    fetch(`${API}/markets/${address}/candles?tf=${tf}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (!stale) setCandles(d.candles ?? [])
+    loadCandles(address, tf)
+      .then((candles) => {
+        if (!stale) setCandles(candles)
       })
       .catch(() => {
         if (!stale) setCandles([])
@@ -131,7 +130,7 @@ export function Composer({ markets }: { markets: Market[] }) {
       <section aria-label="Chart" className="surface-card flex min-w-0 flex-[999_1_520px] flex-col">
         <div className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-line px-5 py-4">
           <label className="flex h-10 items-center gap-2.5 border border-line-strong bg-sidebar pr-2 pl-2">
-            <TokenIcon symbol={asset} size={24} />
+            <TokenIcon symbol={asset} src={market?.imageUrl} size={24} />
             <span className="sr-only">Market</span>
             <select
               value={asset}
