@@ -285,11 +285,13 @@ function Caller({ me, caller }: { me: Me; caller: MyCaller | null | undefined })
         <p className="sc-muted sc-small">Post a call on X and it shows up under your post.</p>
       </section>
     )
-  const next = !me.profile
-    ? 'Pick a username'
-    : !me.profile.worldVerified
-      ? 'Verify with World ID'
-      : 'Sign your caller record'
+  // Signed in with X, the username comes from the X handle on the way: World ID is next.
+  const next =
+    !me.profile && !me.account.x
+      ? 'Pick a username'
+      : !me.profile?.worldVerified
+        ? 'Verify with World ID'
+        : 'Sign your caller record'
   return (
     <section className="sc-box">
       <div className="sc-row">
