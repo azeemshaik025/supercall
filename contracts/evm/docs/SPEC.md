@@ -1,15 +1,17 @@
 # Hisaab: approved design
 
 ## Summary
+
 Supercall runs on a contract named Hisaab on Arc Testnet. It holds USDC fees from followers who copy a trade call. A follower pays the fees with one signed Permit2 transfer, which the backend usually submits. The backend's writer key registers each call. A trusted settler then posts one of four endings: Right, Above entry, Wrong, or Refund. The settler settles each call in batches of up to 50 copies, and payouts are pushed to followers, the caller's payout wallet, and the treasury in the same batch. Nobody claims, except for a payout that USDC refused. The contract never reads prices. It is for callers who post trade ideas (callers never transact) and for followers who pay to copy them.
 
 **Money rules (from the spec):**
+
 1. Kept fee. On a Right or Above entry call, the settler posts each copy's kept fee: the smaller of her call fee and half her net profit. Profit comes from her own trade fills, which the contract cannot see. The contract checks only that the kept fee is at most that copy's call fee, and 0 if her buy never filled. The kept fee comes out of the credit-paid part of her call fee first, then the cash-paid part. The rest of her call fee comes back in the form it was paid.
 2. Caller's cut. Each call has a cut set at registration, between 10% and 70% of the cash-paid kept fees. Right pays the full cut. Above entry pays half the cut. The rest of the kept cash goes into the earned part of the caller's fund.
 3. The caller's fund. The contract holds it and the caller can never withdraw it. It has two parts:
    - Earned: from kept fees paid in cash. It has a limit (a stub for now), and anything above the limit goes to the call's payout wallet as cash.
    - Credit-only: from kept fees paid with credit. No limit, and never paid to the caller.
-   The fund is keyed by a bytes32 caller id, not by a wallet. Each call stores the wallet that receives the cut and any overflow.
+     The fund is keyed by a bytes32 caller id, not by a wallet. Each call stores the wallet that receives the cut and any overflow.
 4. Treasury. It gets only the platform fee, and only from a copy whose buy filled, on a call that worked (Right or Above entry). Otherwise the platform fee goes back to the follower in cash. The treasury never gets any call fee.
 5. Wrong. Each follower gets both fees back. The settler posts each copy's credit ask, at most 30% of the copy size minus the call fee. A call's total credit is at most half of the earned and credit-only parts together. If the asks add up to more, all asks are scaled down by the same percentage. The credit comes from credit-only first, then earned, and that USDC moves into a credit reserve.
 6. Credit. It pays future call fees only, before cash. It cannot be withdrawn or moved, and it never expires. A call fee paid with credit comes back as credit. If it is kept, all of it goes into the credit-only part of the fund, never to the caller as cash.
@@ -21,6 +23,7 @@ Supercall runs on a contract named Hisaab on Arc Testnet. It holds USDC fees fro
    - 7 days after the deadline, anyone can continue an unfinished settlement from the cursor as Refund. Copies already settled stay settled, any credit set aside but not yet handed out goes back to the fund, and the settler can no longer settle that call.
 
 **Assumptions I made because the spec did not pin them down (change before build if wrong):**
+
 1. Copy size is notional. Followers pay only the two fees in USDC, not the copy size. A $1,000 copy pays $6 + $1. The backend places the actual trade off-chain.
 2. Call terms stay off-chain. The contract stores only the fingerprint, so it cannot check stop < entry < target or that the call is long-only. `call` is a bytes32 call id chosen by the backend and must be unused. `fingerprint` must be non-zero. `shareBps` is the cut.
 3. Limits at registration: the deadline must be in the future, with no upper cap (a call posted on 6 Nov can run to 31 Dec), `shareBps` must be 1000 to 7000, and `caller` and `wallet` must be non-zero. A follower cannot copy a call when she is its payout wallet.
@@ -42,6 +45,7 @@ Supercall runs on a contract named Hisaab on Arc Testnet. It holds USDC fees fro
 19. Local tests use a mock ERC-20 for USDC (with a blocklist switch) and a locally deployed Permit2, because a Foundry fork cannot run Arc USDC's system contracts. The real USDC path is proven by one live `payFee` on Arc Testnet after deploy. That needs a funded test follower wallet that has approved Permit2, and the writer key to register a proof call. The proof copies $1,000 (notional), so the follower pays only $7: $6.00 call fee + $1.00 platform fee, which is 7,000,000 USDC units.
 
 ## Architecture
+
 - Blockchain: Arc Testnet (chain 5042002). USDC is the gas token and the fee token, at the 6-decimal ERC-20 predeploy 0x3600000000000000000000000000000000000000.
 - Contract: `Hisaab`, a single escrow contract (OpenZeppelin `Ownable2Step`, `Pausable`, `ReentrancyGuard`).
   - Constructor: `usdc`, `permit2`, `owner`, `writer`, `settler`, `treasury`. The treasury is immutable with no setter.
@@ -75,16 +79,17 @@ Supercall runs on a contract named Hisaab on Arc Testnet. It holds USDC fees fro
 - Review level: deeper security review with unit tests (funds custody and intricate accounting), then deploy to Arc Testnet and prove the real USDC transfer with one live `payFee`. Local tests use a mock USDC and a locally deployed Permit2. Any fork rehearsal covers deployment and the non-USDC paths only. A deeper review is a best-effort check, not a substitute for a paid third-party audit.
 
 ## Payout Table
+
 Per copy. Platform fee = p. The call fee c has a cash-paid part (c_cash) and a credit-paid part (c_cr). The settler posts the kept fee k (at most c, and 0 if the buy did not fill). The kept fee comes out of the credit-paid part first: k_cr = min(k, c_cr), and k_cash = k - k_cr. The cut is the call's shareBps.
 
-| Ending | Back to follower, cash | Back to follower, credit | Caller's payout wallet, cash | Earned fund | Credit-only fund | Treasury |
-| --- | --- | --- | --- | --- | --- | --- |
-| Right, buy filled | c_cash - k_cash (p is not returned) | c_cr - k_cr | cut x k_cash | + (k_cash - cut x k_cash); any excess above the limit goes to the wallet | + k_cr | p |
-| Right, buy not filled | c_cash + p | c_cr | 0 | 0 | 0 | 0 |
-| Above entry, buy filled | c_cash - k_cash (p is not returned) | c_cr - k_cr | (cut / 2) x k_cash | + (k_cash - (cut / 2) x k_cash); any excess above the limit goes to the wallet | + k_cr | p |
-| Above entry, buy not filled | c_cash + p | c_cr | 0 | 0 | 0 | 0 |
-| Wrong | c_cash + p | c_cr, plus new credit from the fund | 0 | shrinks only after credit-only is used up | shrinks first | 0 |
-| Refund (cancelled, never filled, or expired) | c_cash + p | c_cr | 0 | unchanged | unchanged | 0 |
+| Ending                                       | Back to follower, cash              | Back to follower, credit            | Caller's payout wallet, cash | Earned fund                                                                    | Credit-only fund | Treasury |
+| -------------------------------------------- | ----------------------------------- | ----------------------------------- | ---------------------------- | ------------------------------------------------------------------------------ | ---------------- | -------- |
+| Right, buy filled                            | c_cash - k_cash (p is not returned) | c_cr - k_cr                         | cut x k_cash                 | + (k_cash - cut x k_cash); any excess above the limit goes to the wallet       | + k_cr           | p        |
+| Right, buy not filled                        | c_cash + p                          | c_cr                                | 0                            | 0                                                                              | 0                | 0        |
+| Above entry, buy filled                      | c_cash - k_cash (p is not returned) | c_cr - k_cr                         | (cut / 2) x k_cash           | + (k_cash - (cut / 2) x k_cash); any excess above the limit goes to the wallet | + k_cr           | p        |
+| Above entry, buy not filled                  | c_cash + p                          | c_cr                                | 0                            | 0                                                                              | 0                | 0        |
+| Wrong                                        | c_cash + p                          | c_cr, plus new credit from the fund | 0                            | shrinks only after credit-only is used up                                      | shrinks first    | 0        |
+| Refund (cancelled, never filled, or expired) | c_cash + p                          | c_cr                                | 0                            | unchanged                                                                      | unchanged        | 0        |
 
 - New credit on Wrong: ask x totalCredit / totalAsk, where totalCredit = min(totalAsk, (earned + credit-only) / 2), fixed in the first batch. That USDC is drawn from credit-only first, then earned, set aside in the call, and moves into the credit reserve as each copy is paid.
 - Fund overflow: after any addition, anything in the earned part above fundLimit(caller) is paid to the call's payout wallet as cash. The stub returns no limit, so this does not trigger yet. The credit-only part has no limit and is never paid out.
@@ -94,11 +99,13 @@ Per copy. Platform fee = p. The call fee c has a cash-paid part (c_cash) and a c
 - Expired calls: copies not yet settled are paid as Refund. Copies already settled keep their original ending.
 
 Worked examples, with Priya copying $1,000 (c = $6, p = $1) and Raj's cut at 50.1%:
+
 - Right, all cash, net profit $129.94: k = min($6, $64.97) = $6, so k_cash = $6. Raj's wallet gets $3.006. His earned fund gets $2.994. The treasury gets $1. Priya gets nothing back.
 - Right, mixed payment: her $6 call fee was $2 credit and $4 cash, and k = $3.49. So k_cr = $2 goes to credit-only. k_cash = $1.49 is split: $0.74649 to Raj's wallet and $0.74351 to earned. Priya gets $4 - $1.49 = $2.51 back in cash, and no credit back. The treasury gets $1.
 - Wrong, Raj's fund $100 across both parts: the call's total credit is at most $50, drawn from credit-only first. Priya gets $6 + $1 back in cash, plus her scaled credit (the example's $9.85).
 
 ## Files to Create/Modify
+
 1. contracts/Hisaab.sol: the escrow contract. Constructor args: usdc, permit2, owner, writer, settler, treasury.
 2. contracts/interfaces/IPermit2.sol: the small slice of the Permit2 interface the contract uses (`permitWitnessTransferFrom` and its structs).
 3. contracts/contract-metadata/Hisaab.json: written at deploy with address and ABI.
@@ -110,6 +117,7 @@ Worked examples, with Priya copying $1,000 (c = $6, p = $1) and Raj's cut at 50.
 src/App.tsx stays untouched.
 
 ## Build Sequence
+
 1. Write Hisaab.sol and the Permit2 interface with the structs, constants, roles, functions, and events above.
 2. Run the deeper security review and static analysis; fix findings.
 3. Write and run the unit tests against the mock USDC and the local Permit2: `payFee` with credit and cash (including the case where credit covers the whole call fee), a signature for the wrong size or call, a reused nonce, an expired signature, a third-party submitter, all four endings, a call with more than 50 copies settled in batches, expiry halfway through a settlement, fund-limit overflow with an overridden limit, a fund keyed by caller id across two calls, two-step ownership, and the math for the $1 minimum and the worked examples.
@@ -118,6 +126,7 @@ src/App.tsx stays untouched.
 6. Report the address, the function list, the one-time Permit2 approval each follower needs, and the exact typed data a follower signs, so the backend can integrate.
 
 ## Done When
+
 - [ ] A $1,000 copy escrows exactly $6.00 + $1.00 USDC; a $1 copy escrows $0.006 + $0.001.
 - [ ] `payFee(call, follower, size, nonce, deadline, signature)` returns the copy index, and pulls only the cash part through Permit2 (the rest of the call fee plus the platform fee). Credit pays the call fee first and is spent only if the pull succeeds.
 - [ ] `payFee` is rejected for a size below $1, after the call's deadline, after settlement starts, while paused, and for a follower who is the call's payout wallet. It is also rejected for a signature over a different size or call, an expired signature, and a reused nonce. The same signature cannot be used twice.
