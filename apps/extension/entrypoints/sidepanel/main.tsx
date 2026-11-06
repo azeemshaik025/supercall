@@ -1,6 +1,6 @@
 // The side panel: sign in with Privy, see the wallet, and copy the call a card's Copy picked.
 import { PrivyProvider, useCreateWallet, usePrivy, useWallets } from '@privy-io/react-auth'
-import { ARC_TESTNET, CHAIN, viemChain } from '@supercall/chains'
+import { CHAIN } from '@supercall/chains'
 import { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderSVG } from 'uqr'
@@ -15,27 +15,23 @@ import type { Message } from '../background'
 declare const __API_URL__: string
 declare const __WEB_ORIGIN__: string
 
-// The same address on both: testnet, where Hisaab holds fees and the faucet pays out, and mainnet,
-// where Flash trades.
-const networks = {
-  testnet: createPublicClient({ chain: viemChain(ARC_TESTNET), transport: http() }),
-  mainnet: createPublicClient({ chain: arc, transport: http() }),
-}
+// The app's chain (CHAIN): where Hisaab holds fees and Flash trades.
+const client = createPublicClient({ chain: arc, transport: http() })
 /** How often balances are read again while the panel is open. */
 const REFRESH_MS = 15_000
 const usd = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
 
-/** The wallet's USDC on one Arc network, read again on `tick` and every 15 seconds. */
-function useUsdc(wallet: string | undefined, network: keyof typeof networks, tick: number) {
+/** The wallet's USDC on the app's chain, read again on `tick` and every 15 seconds. */
+function useUsdc(wallet: string | undefined, tick: number) {
   const [balance, setBalance] = useState<number | null>()
   // biome-ignore lint/correctness/useExhaustiveDependencies: tick is the reload button asking to read again
   useEffect(() => {
     if (!wallet) return
     let live = true
     const read = () =>
-      networks[network]
+      client
         .readContract({
           address: CHAIN.usdc.address,
           abi: erc20Abi,
@@ -45,7 +41,7 @@ function useUsdc(wallet: string | undefined, network: keyof typeof networks, tic
         .then(
           (b) => live && setBalance(fromMicro(b)),
           (error: unknown) => {
-            console.warn(`Supercall ${network} balance failed`, error)
+            console.warn('Supercall balance failed', error)
             if (live) setBalance(null)
           },
         )
@@ -56,7 +52,7 @@ function useUsdc(wallet: string | undefined, network: keyof typeof networks, tic
       live = false
       clearInterval(timer)
     }
-  }, [wallet, network, tick])
+  }, [wallet, tick])
   return balance
 }
 
@@ -159,10 +155,7 @@ function AddFunds({ address }: { address: string }) {
         <span className="sc-mono sc-break">{address}</span>
         <CopyButton text={address} />
       </div>
-      <p className="sc-muted">Send USDC on Arc testnet only. Other networks won’t arrive here.</p>
-      <a className="sc-link" href="https://faucet.circle.com" target="_blank" rel="noreferrer">
-        Get testnet USDC from Circle’s faucet
-      </a>
+      <p className="sc-muted">Send USDC on {CHAIN.name} only. Other networks won’t arrive here.</p>
     </div>
   )
 }
@@ -170,8 +163,7 @@ function AddFunds({ address }: { address: string }) {
 function Account({ tick }: { tick: number }) {
   const { user, logout } = usePrivy()
   const { address, creating } = useWallet()
-  const testnet = useUsdc(address, 'testnet', tick)
-  const mainnet = useUsdc(address, 'mainnet', tick)
+  const balance = useUsdc(address, tick)
   const shown = (b: number | null | undefined) =>
     !address ? '–' : b === undefined ? '…' : b === null ? 'Unavailable' : usd(b)
   const [showFunds, setShowFunds] = useState(false)
@@ -212,12 +204,8 @@ function Account({ tick }: { tick: number }) {
           </dd>
         </div>
         <div>
-          <dt>USDC · Arc testnet</dt>
-          <dd className="sc-mono">{shown(testnet)}</dd>
-        </div>
-        <div>
-          <dt>USDC · Arc mainnet</dt>
-          <dd className="sc-mono">{shown(mainnet)}</dd>
+          <dt>USDC</dt>
+          <dd className="sc-mono">{shown(balance)}</dd>
         </div>
       </dl>
       {address && showFunds && <AddFunds address={address} />}
@@ -311,7 +299,7 @@ function Panel() {
           Supercall
         </span>
         <span className="sc-tools">
-          <span className="sc-chip">Arc</span>
+          <span className="sc-chip">{CHAIN.name}</span>
           <button
             type="button"
             className="sc-icon"
