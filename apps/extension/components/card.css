@@ -1,0 +1,505 @@
+/* The card under a call on X. Inside its own shadow root, so X's styles can't reach it and
+   these can't leak out. The app's palette (apps/web/app/globals.css); light when X is light. */
+:host {
+  display: block;
+  --night: #04090e;
+  --surface: #0b131b;
+  --surface-2: #111b25;
+  --edge: #1b2733;
+  --ink: #eff1f4;
+  --muted: #8799a8;
+  --faint: #53626f;
+  --good: #3ecf8e;
+  --bad: #ff4566;
+  --warn: #f5b54a;
+}
+:host([data-theme="light"]) {
+  --night: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f5f8fa;
+  --edge: #e1e8ed;
+  --ink: #0f1419;
+  --muted: #536471;
+  --faint: #8b98a5;
+  --good: #00a36c;
+  --bad: #e0245e;
+  --warn: #c77700;
+}
+
+/* WXT resets everything on the host, the font too: set it here. X's own font when the page has
+   it loaded (documents share fonts with their shadow roots), else the system's. */
+.sc-card,
+.sc-note,
+.sc-badge-pill,
+.sc-pbadge,
+.sc-panel,
+.sc-panel a,
+.sc-card button,
+.sc-card a {
+  font-family:
+    TwitterChirp, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sc-card,
+.sc-note {
+  box-sizing: border-box;
+  margin: 4px 16px 12px;
+  color: var(--ink);
+}
+
+.sc-card {
+  padding: 14px 16px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+/* The logo: silver, as in the app. On a light page it goes dark so it can be seen. */
+.mark {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+.sc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 20px;
+}
+.sc-pair {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.sc-quote {
+  color: var(--muted);
+  font-weight: 400;
+}
+.sc-dir {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  text-transform: capitalize;
+}
+.sc-dir.long {
+  background: color-mix(in srgb, var(--good) 14%, transparent);
+  color: var(--good);
+}
+.sc-dir.short {
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+  color: var(--bad);
+}
+.sc-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--night);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+/* SuperFactor, in the wordmark's voice: "Super" italic and heavier. */
+.sc-sf {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-left: auto;
+}
+.sc-sf b {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.sc-sf span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.sc-sf i {
+  padding-right: 0.08em;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.sc-levels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 0;
+}
+.sc-levels > div {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.sc-levels dt {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+.sc-levels dd {
+  margin: 2px 0 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 22px;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.sc-levels dd.good {
+  color: var(--good);
+}
+.sc-levels dd.bad {
+  color: var(--bad);
+}
+.sc-hint {
+  display: block;
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 14px;
+  letter-spacing: 0;
+}
+
+.sc-meta,
+.sc-closed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 16px;
+}
+.sc-meta time {
+  color: var(--ink);
+}
+.sc-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.sc-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.sc-status.good {
+  color: var(--good);
+}
+.sc-status.bad {
+  color: var(--bad);
+}
+.sc-status.warn {
+  color: var(--warn);
+}
+
+.sc-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.sc-copy,
+.sc-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    opacity 0.15s,
+    border-color 0.15s;
+}
+.sc-copy {
+  flex: 1;
+  border: 0;
+  background: var(--ink);
+  color: var(--night);
+}
+.sc-copy:hover {
+  opacity: 0.88;
+}
+.sc-open {
+  border: 1px solid var(--edge);
+  background: transparent;
+  color: var(--ink);
+}
+.sc-open::after {
+  content: "↗";
+  margin-left: 6px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.sc-open:hover {
+  border-color: var(--muted);
+}
+.sc-super {
+  margin-top: 8px;
+}
+
+/* Copying paused: price outside the entry band. */
+.sc-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+.sc-band strong {
+  color: var(--warn);
+  font-weight: 600;
+}
+.sc-band b {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The pill in the tweet's header: the page's own colours, no border or shadow, with a silver
+   light that sweeps round its edge now and then, so it catches the eye while scrolling. */
+.sc-badge-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  margin-right: 6px;
+  padding: 0 9px 0 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sc-badge-pill::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      110deg,
+      transparent 35%,
+      color-mix(in srgb, var(--ink) 70%, transparent) 50%,
+      transparent 65%
+    )
+    -100% 0 / 250% 100% no-repeat;
+  /* Only the border ring shows. */
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  animation: sc-sweep 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.sc-badge-pill:hover,
+.sc-badge-pill[aria-expanded="true"] {
+  border-color: var(--edge);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.sc-badge-pill .mark {
+  width: 16px;
+  height: 16px;
+}
+@keyframes sc-sweep {
+  0%,
+  35% {
+    background-position: 150% 0;
+  }
+  80%,
+  100% {
+    background-position: -50% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-badge-pill::before {
+    animation: none;
+  }
+}
+.sc-chev {
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.sc-badge-pill[aria-expanded="true"] .sc-chev {
+  transform: rotate(180deg);
+}
+
+/* Beside the name on a caller's profile: smaller than the name, set off by a thin rule. */
+.sc-pbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--edge);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 18px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sc-pbadge .mark {
+  width: 15px;
+  height: 15px;
+}
+.sc-pbadge b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sc-sf-name {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.sc-sf-name i {
+  padding-right: 0.08em;
+  color: var(--ink);
+  font-weight: 600;
+}
+.sc-pbadge .sc-sf-name {
+  font-size: 13px;
+}
+.sc-pbadge:hover .sc-sf-name {
+  text-decoration: underline;
+}
+
+/* Under the follow counts on a caller's profile. */
+.sc-panel {
+  box-sizing: border-box;
+  margin: 12px 0 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  color: var(--ink);
+}
+.sc-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sc-panel-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.sc-panel-brand .mark {
+  width: 18px;
+  height: 18px;
+}
+.sc-human {
+  color: var(--good);
+  font-size: 12px;
+  font-weight: 500;
+}
+.sc-panel-link {
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: none;
+}
+.sc-panel-link::after {
+  content: " ↗";
+}
+.sc-panel-link:hover {
+  color: var(--ink);
+}
+.sc-panel-score {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+.sc-panel-score .sc-sf {
+  margin-left: 0;
+}
+.sc-panel-score .sc-sf b {
+  font-size: 28px;
+  line-height: 28px;
+}
+.sc-last {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sc-last i {
+  width: 8px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--muted);
+}
+.sc-last i.good {
+  background: var(--good);
+}
+.sc-last i.bad {
+  background: var(--bad);
+}
+.sc-new {
+  color: var(--muted);
+  font-size: 13px;
+}
+.sc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--edge);
+}
+.sc-stats dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.sc-stats dt {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.sc-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+.sc-note .mark {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+:host([data-theme="light"]) .mark {
+  filter: brightness(0.2);
+}
