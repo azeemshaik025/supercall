@@ -501,7 +501,7 @@ function Recent({ copies }: { copies: MyCopy[] }) {
               )}
               {call?.arkivKey && (
                 <a
-                  href={`https://data.arkiv.network/entity/${call.arkivKey}`}
+                  href={`https://rabdi.explorer.arkiv.network/entity/${call.arkivKey}`}
                   target="_blank"
                   rel="noreferrer"
                 >
