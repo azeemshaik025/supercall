@@ -34,7 +34,17 @@ export {
   settleWrong,
   shareFor,
 } from './settlement.ts'
-export { callScore, nextScore, SF, superFactor } from './superfactor.ts'
+export {
+  callScore,
+  callVolume,
+  callWeight,
+  nextScore,
+  SF,
+  superFactor,
+  VOLUME,
+  walletTrust,
+  walletVolume,
+} from './superfactor.ts'
 export type {
   Band,
   Call,
