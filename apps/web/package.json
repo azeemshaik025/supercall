@@ -14,6 +14,7 @@
     "@privy-io/wagmi": "^4.0.20",
     "@supercall/chains": "workspace:*",
     "@tanstack/react-query": "^5.106.0",
+    "@worldcoin/idkit": "^4.6.0",
     "klinecharts": "^9.8.12",
     "next": "16.4.5",
     "react": "19.3.1",
