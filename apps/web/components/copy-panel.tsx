@@ -136,6 +136,20 @@ export function CopyPanel({
   if (me?.profile?.username && me.profile.username === call.caller) {
     return <GoSuper call={call} wallet={me.profile.wallet} open={open} />
   }
+  // Past its deadline but not settled yet: the status says open until Hisaab settles it.
+  if (!ENDED.includes(call.status) && Date.parse(call.expiresAt) <= Date.now()) {
+    return (
+      <Shell>
+        <div className="flex flex-col gap-1">
+          <span className="text-[12px] text-muted">Ended</span>
+          <span className="text-[18px] font-medium">Deadline passed · settling</span>
+          <span className="text-[13px] text-muted">
+            Copying is closed. Hisaab settles it on Arc: fees kept or refunded by how it ended.
+          </span>
+        </div>
+      </Shell>
+    )
+  }
   if (ENDED.includes(call.status)) {
     const st = statusLabel[call.status]
     return (
