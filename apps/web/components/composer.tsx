@@ -202,7 +202,7 @@ export function Composer({ markets }: { markets: Market[] }) {
             <Segmented label="Timeframe" options={TIMEFRAMES} value={tf} onChange={setTf} />
           </div>
         </Strip>
-        <div className="relative p-5">
+        <div className="relative py-4 pr-4 pl-1">
           <CandleChart
             candles={candles}
             levels={levels}
@@ -210,6 +210,7 @@ export function Composer({ markets }: { markets: Market[] }) {
             onLevel={onLevel}
             pick={pick}
             onPicked={() => setPick(null)}
+            tools
             height={500}
             precision={base < 1 ? 4 : 2}
             label={`${asset} candles with your levels; drag a line to move it`}
