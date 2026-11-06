@@ -12,12 +12,14 @@ import {
 } from '@supercall/core'
 import Link from 'next/link'
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
-import { ApiError, loadCandles } from '@/lib/api'
+import { API, ApiError, loadCandles } from '@/lib/api'
 import { useCallerSetup } from '@/lib/caller'
 import { pct, price, usd } from '@/lib/format'
 import { useLivePrice } from '@/lib/live-price'
 import { CALL_FEE } from '@/lib/money'
+import { callImagePath } from '@/lib/og'
 import { type CallInput, PUBLISH_STEP, type PublishStep, usePublish } from '@/lib/publish'
+import { callLink, postOnX } from '@/lib/share'
 import type { Candle, Market } from '@/lib/types'
 import { CandleChart, type Level } from './candle-chart'
 import { cx, Info, Segmented, TokenIcon } from './ui'
@@ -116,6 +118,13 @@ export function Composer({ markets }: { markets: Market[] }) {
   const [pick, setPick] = useState<Level | null>(null)
   const [reviewing, setReviewing] = useState(false)
   const [candles, setCandles] = useState<Candle[]>([])
+  // The live price. Until the caller moves a level, the levels follow it, so the entry is
+  // the price now and the call opens as "enter now", not as one waiting for its entry.
+  const live = useLivePrice(market?.address, base)
+  const [touched, setTouched] = useState(false)
+  useEffect(() => {
+    if (!touched && live.value > 0) setLevels(defaults(live.value, direction))
+  }, [live.value, touched, direction])
 
   const setup = useCallerSetup()
   const sf = setup.caller?.caller?.superFactor ?? 50
@@ -144,14 +153,18 @@ export function Composer({ markets }: { markets: Market[] }) {
     const m = markets.find((x) => x.address === a)
     setAddress(a)
     setLevels(defaults(m?.price ?? 1, direction))
+    setTouched(false)
     setPick(null)
   }
   const flip = (d: Direction) => {
     if (d === direction) return
     setDirection(d)
-    setLevels(defaults(levels.entry, d))
+    setLevels(defaults(touched ? levels.entry : live.value, d))
   }
-  const onLevel = (key: Level, value: number) => setLevels((l) => ({ ...l, [key]: round(value) }))
+  const onLevel = (key: Level, value: number) => {
+    setTouched(true)
+    setLevels((l) => ({ ...l, [key]: round(value) }))
+  }
 
   const long = direction === 'long'
   const stopOk = long ? levels.stop < levels.entry : levels.stop > levels.entry
@@ -197,7 +210,7 @@ export function Composer({ markets }: { markets: Market[] }) {
   return (
     <div className="flex flex-wrap items-start gap-5">
       <section aria-label="Chart" className="surface-card flex min-w-0 flex-[999_1_520px] flex-col">
-        <Strip markets={markets} market={market} onPick={pickCoin}>
+        <Strip markets={markets} market={market} live={live} onPick={pickCoin}>
           <div className="ml-auto">
             <Segmented label="Timeframe" options={TIMEFRAMES} value={tf} onChange={setTf} />
           </div>
@@ -225,241 +238,243 @@ export function Composer({ markets }: { markets: Market[] }) {
 
       <aside aria-label="New call" className="surface-card flex min-w-0 flex-[1_1_340px] flex-col">
         <div className="flex items-baseline justify-between border-b border-line px-5 py-4">
-          <h1 className="text-[15px] font-medium">{reviewing ? 'Review call' : 'New call'}</h1>
+          <h1 className="text-[15px] font-medium">New call</h1>
           <span className="text-[12px] text-muted">
             SuperFactor <span className="text-ink">{Math.round(sf)}</span>
           </span>
         </div>
 
-        {reviewing ? (
-          <Review
+        {reviewing && market && (
+          <ReviewModal
             input={input}
-            asset={asset}
+            market={market}
             cut={cut}
+            sf={sf}
+            caller={setup.caller?.caller?.handle ?? setup.me?.profile?.username ?? ''}
             wallet={wallet}
-            onBack={() => setReviewing(false)}
+            onClose={() => setReviewing(false)}
           />
-        ) : (
-          <div className="flex flex-col gap-5 p-5">
-            <fieldset
-              aria-label="Direction"
-              className="grid grid-cols-2 gap-0.5 border border-line bg-sidebar p-[3px]"
-            >
-              {(['long', 'short'] as const).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  aria-pressed={direction === d}
-                  onClick={() => flip(d)}
-                  className={cx(
-                    'h-9 cursor-pointer text-[13px] font-medium capitalize',
-                    direction === d
-                      ? d === 'long'
-                        ? 'bg-good-soft text-good'
-                        : 'bg-bad-soft text-bad'
-                      : 'text-muted hover:text-ink',
-                  )}
-                >
-                  {d}
-                </button>
-              ))}
-            </fieldset>
-
-            {/* A price ladder, highest on top: target, entry, stop for a long; reversed for a short. */}
-            <div className="flex flex-col gap-1.5">
-              {ladder.map((key) => (
-                <LevelInput
-                  key={key}
-                  level={key}
-                  value={levels[key]}
-                  entry={levels.entry}
-                  bad={key === 'stop' ? !stopOk : key === 'target' ? !targetOk : false}
-                  picking={pick === key}
-                  onChange={(v) => setLevels((l) => ({ ...l, [key]: v }))}
-                  onPick={() => setPick((p) => (p === key ? null : key))}
-                />
-              ))}
-              {problem ? (
-                <p className="text-[12px] text-bad">{problem}</p>
-              ) : tooClose ? (
-                <p className="text-[12px] text-warn">
-                  Target is under {pct(MIN_TARGET_DISTANCE)} from entry: the call is scored, but
-                  nobody can copy it.
-                </p>
-              ) : (
-                <span className="text-[12px] text-muted">
-                  Reward is {rewardRisk(levels).toFixed(1)}× the risk
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2.5">
-              <span className="flex items-baseline justify-between text-[12px]">
-                <span className="flex items-center gap-1.5 text-muted">
-                  Entry zone{' '}
-                  <Info
-                    label="About the entry zone"
-                    text="Followers can copy while price is inside this zone around your entry."
-                  />
-                </span>
-                <span className="text-[13px] tabular-nums">±{(band * 100).toFixed(2)}%</span>
-              </span>
-              <input
-                type="range"
-                min={ZONE_MIN}
-                max={ZONE_MAX}
-                step={0.0001}
-                value={band}
-                onChange={(e) => setBand(snapZone(Number(e.target.value)))}
-                aria-label="Entry zone"
-                className="range"
-                style={
-                  {
-                    '--fill': `${((band - ZONE_MIN) / (ZONE_MAX - ZONE_MIN)) * 100}%`,
-                  } as CSSProperties
-                }
-              />
-              <span className="flex justify-between text-[11px] text-faint tabular-nums">
-                <span>{price(levels.entry * (1 - band))}</span>
-                <span>copying open between</span>
-                <span>{price(levels.entry * (1 + band))}</span>
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <span className="text-[12px] text-muted">Expires in</span>
-              <div className="grid grid-cols-5 gap-1">
-                {EXPIRIES.map((e) => (
-                  <Opt
-                    key={e.label}
-                    on={!custom && hours === e.hours}
-                    onClick={() => {
-                      setCustom(false)
-                      setHours(e.hours)
-                    }}
-                  >
-                    {e.label}
-                  </Opt>
-                ))}
-                <Opt on={custom} onClick={() => setCustom(true)}>
-                  Custom
-                </Opt>
-              </div>
-              {custom && <CustomExpiry hours={hours} onHours={setHours} />}
-            </div>
-
-            <label className="flex flex-col gap-2">
-              <span className="flex justify-between text-[12px] text-muted">
-                Why (optional)
-                <span className="text-faint tabular-nums">{thesis.length}/180</span>
-              </span>
-              <textarea
-                rows={2}
-                maxLength={180}
-                value={thesis}
-                onChange={(e) => setThesis(e.target.value)}
-                placeholder="One line on the setup"
-                className="resize-none border border-line-strong bg-sidebar px-3 py-2.5 text-[13px] outline-none focus:border-steel"
-              />
-            </label>
-
-            <div className="flex flex-col gap-2 border-t border-line pt-4">
-              <span className="flex justify-between text-[12px]">
-                <span className="flex items-center gap-1.5 text-muted">
-                  Boost to Explore{' '}
-                  <Info
-                    label="About boost"
-                    text="Give up points of your cut to be featured on Explore. On a right call they go to your followers as credit."
-                  />
-                </span>
-                <span className="tabular-nums">
-                  {maxBoostPts <= 0
-                    ? 'Unlocks at SuperFactor 70'
-                    : boost > 0
-                      ? `${Math.round(boost * 100)} pts of your cut`
-                      : 'Off'}
-                </span>
-              </span>
-              <input
-                type="range"
-                min={0}
-                max={Math.max(maxBoostPts, BOOST_STEP)}
-                step={BOOST_STEP}
-                value={boost}
-                disabled={maxBoostPts <= 0}
-                onChange={(e) =>
-                  setBoost(Math.round(Number(e.target.value) / BOOST_STEP) * BOOST_STEP)
-                }
-                aria-label="Boost"
-                className="range disabled:opacity-40"
-                style={
-                  {
-                    '--fill': `${maxBoostPts > 0 ? (boost / maxBoostPts) * 100 : 0}%`,
-                  } as CSSProperties
-                }
-              />
-            </div>
-
-            <dl className="flex flex-col border-t border-line text-[13px]">
-              <div className="flex justify-between border-b border-line py-2.5">
-                <dt
-                  className="text-muted"
-                  title="What the target pays for every $1 risked to the stop"
-                >
-                  Payoff
-                </dt>
-                <dd className="tabular-nums">
-                  {valid ? `${rewardRisk(levels).toFixed(1)}×` : '—'}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between border-b border-line py-2.5">
-                <dt
-                  className="text-muted"
-                  title="Rough odds the target is hit before the stop, from the distances alone. A stop inside normal swings counts as riskier. Not a forecast."
-                >
-                  Odds
-                </dt>
-                <dd className="flex items-center gap-2 tabular-nums">
-                  {valid ? (
-                    <>
-                      <span>~{Math.round(odds * 100)}% target first</span>
-                      <span
-                        className={cx('px-1.5 py-0.5 text-[11px] font-medium', risk.chip)}
-                        title={stopInNoise ? 'Stop is inside normal price swings' : undefined}
-                      >
-                        {risk.label}
-                      </span>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </dd>
-              </div>
-              <div className="flex justify-between border-b border-line py-2.5">
-                <dt className="text-muted">Your cut</dt>
-                <dd className="tabular-nums">{pct(cut)} of kept fees</dd>
-              </div>
-              <dt className="pt-3.5 pb-1 text-[12px] text-muted">For every $1,000 copied</dt>
-              <div className="flex justify-between border-b border-line py-2.5">
-                <dt className="text-muted">If you're right, you keep</dt>
-                <dd className="text-good tabular-nums">{usd(keepPer1k)}</dd>
-              </div>
-              <div className="flex justify-between py-2.5">
-                <dt className="text-muted">If you're wrong, your fund pays</dt>
-                <dd className="text-bad tabular-nums">up to {usd(payPer1k)}</dd>
-              </div>
-            </dl>
-
-            <button
-              type="button"
-              disabled={!valid || !market}
-              onClick={() => setReviewing(true)}
-              className="btn-cta h-[46px] cursor-pointer text-[14px] disabled:opacity-50"
-            >
-              Review call
-            </button>
-          </div>
         )}
+        <div className="flex flex-col gap-5 p-5">
+          <fieldset
+            aria-label="Direction"
+            className="grid grid-cols-2 gap-0.5 border border-line bg-sidebar p-[3px]"
+          >
+            {(['long', 'short'] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                aria-pressed={direction === d}
+                onClick={() => flip(d)}
+                className={cx(
+                  'h-9 cursor-pointer text-[13px] font-medium capitalize',
+                  direction === d
+                    ? d === 'long'
+                      ? 'bg-good-soft text-good'
+                      : 'bg-bad-soft text-bad'
+                    : 'text-muted hover:text-ink',
+                )}
+              >
+                {d}
+              </button>
+            ))}
+          </fieldset>
+
+          {/* A price ladder, highest on top: target, entry, stop for a long; reversed for a short. */}
+          <div className="flex flex-col gap-1.5">
+            {ladder.map((key) => (
+              <LevelInput
+                key={key}
+                level={key}
+                value={levels[key]}
+                entry={levels.entry}
+                bad={key === 'stop' ? !stopOk : key === 'target' ? !targetOk : false}
+                picking={pick === key}
+                onChange={(v) => {
+                  setTouched(true)
+                  setLevels((l) => ({ ...l, [key]: v }))
+                }}
+                onPick={() => setPick((p) => (p === key ? null : key))}
+              />
+            ))}
+            {problem ? (
+              <p className="text-[12px] text-bad">{problem}</p>
+            ) : tooClose ? (
+              <p className="text-[12px] text-warn">
+                Target is under {pct(MIN_TARGET_DISTANCE)} from entry: the call is scored, but
+                nobody can copy it.
+              </p>
+            ) : (
+              <span className="text-[12px] text-muted">
+                Reward is {rewardRisk(levels).toFixed(1)}× the risk
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            <span className="flex items-baseline justify-between text-[12px]">
+              <span className="flex items-center gap-1.5 text-muted">
+                Entry zone{' '}
+                <Info
+                  label="About the entry zone"
+                  text="Followers can copy while price is inside this zone around your entry."
+                />
+              </span>
+              <span className="text-[13px] tabular-nums">±{(band * 100).toFixed(2)}%</span>
+            </span>
+            <input
+              type="range"
+              min={ZONE_MIN}
+              max={ZONE_MAX}
+              step={0.0001}
+              value={band}
+              onChange={(e) => setBand(snapZone(Number(e.target.value)))}
+              aria-label="Entry zone"
+              className="range"
+              style={
+                {
+                  '--fill': `${((band - ZONE_MIN) / (ZONE_MAX - ZONE_MIN)) * 100}%`,
+                } as CSSProperties
+              }
+            />
+            <span className="flex justify-between text-[11px] text-faint tabular-nums">
+              <span>{price(levels.entry * (1 - band))}</span>
+              <span>copying open between</span>
+              <span>{price(levels.entry * (1 + band))}</span>
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-[12px] text-muted">Expires in</span>
+            <div className="grid grid-cols-5 gap-1">
+              {EXPIRIES.map((e) => (
+                <Opt
+                  key={e.label}
+                  on={!custom && hours === e.hours}
+                  onClick={() => {
+                    setCustom(false)
+                    setHours(e.hours)
+                  }}
+                >
+                  {e.label}
+                </Opt>
+              ))}
+              <Opt on={custom} onClick={() => setCustom(true)}>
+                Custom
+              </Opt>
+            </div>
+            {custom && <CustomExpiry hours={hours} onHours={setHours} />}
+          </div>
+
+          <label className="flex flex-col gap-2">
+            <span className="flex justify-between text-[12px] text-muted">
+              Why (optional)
+              <span className="text-faint tabular-nums">{thesis.length}/180</span>
+            </span>
+            <textarea
+              rows={2}
+              maxLength={180}
+              value={thesis}
+              onChange={(e) => setThesis(e.target.value)}
+              placeholder="One line on the setup"
+              className="resize-none border border-line-strong bg-sidebar px-3 py-2.5 text-[13px] outline-none focus:border-steel"
+            />
+          </label>
+
+          <div className="flex flex-col gap-2 border-t border-line pt-4">
+            <span className="flex justify-between text-[12px]">
+              <span className="flex items-center gap-1.5 text-muted">
+                Boost to Explore{' '}
+                <Info
+                  label="About boost"
+                  text="Give up points of your cut to be featured on Explore. On a right call they go to your followers as credit."
+                />
+              </span>
+              <span className="tabular-nums">
+                {maxBoostPts <= 0
+                  ? 'Unlocks at SuperFactor 70'
+                  : boost > 0
+                    ? `${Math.round(boost * 100)} pts of your cut`
+                    : 'Off'}
+              </span>
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(maxBoostPts, BOOST_STEP)}
+              step={BOOST_STEP}
+              value={boost}
+              disabled={maxBoostPts <= 0}
+              onChange={(e) =>
+                setBoost(Math.round(Number(e.target.value) / BOOST_STEP) * BOOST_STEP)
+              }
+              aria-label="Boost"
+              className="range disabled:opacity-40"
+              style={
+                {
+                  '--fill': `${maxBoostPts > 0 ? (boost / maxBoostPts) * 100 : 0}%`,
+                } as CSSProperties
+              }
+            />
+          </div>
+
+          <dl className="flex flex-col border-t border-line text-[13px]">
+            <div className="flex justify-between border-b border-line py-2.5">
+              <dt
+                className="text-muted"
+                title="What the target pays for every $1 risked to the stop"
+              >
+                Payoff
+              </dt>
+              <dd className="tabular-nums">{valid ? `${rewardRisk(levels).toFixed(1)}×` : '—'}</dd>
+            </div>
+            <div className="flex items-center justify-between border-b border-line py-2.5">
+              <dt
+                className="text-muted"
+                title="Rough odds the target is hit before the stop, from the distances alone. A stop inside normal swings counts as riskier. Not a forecast."
+              >
+                Odds
+              </dt>
+              <dd className="flex items-center gap-2 tabular-nums">
+                {valid ? (
+                  <>
+                    <span>~{Math.round(odds * 100)}% target first</span>
+                    <span
+                      className={cx('px-1.5 py-0.5 text-[11px] font-medium', risk.chip)}
+                      title={stopInNoise ? 'Stop is inside normal price swings' : undefined}
+                    >
+                      {risk.label}
+                    </span>
+                  </>
+                ) : (
+                  '—'
+                )}
+              </dd>
+            </div>
+            <div className="flex justify-between border-b border-line py-2.5">
+              <dt className="text-muted">Your cut</dt>
+              <dd className="tabular-nums">{pct(cut)} of kept fees</dd>
+            </div>
+            <dt className="pt-3.5 pb-1 text-[12px] text-muted">For every $1,000 copied</dt>
+            <div className="flex justify-between border-b border-line py-2.5">
+              <dt className="text-muted">If you're right, you keep</dt>
+              <dd className="text-good tabular-nums">{usd(keepPer1k)}</dd>
+            </div>
+            <div className="flex justify-between py-2.5">
+              <dt className="text-muted">If you're wrong, your fund pays</dt>
+              <dd className="text-bad tabular-nums">up to {usd(payPer1k)}</dd>
+            </div>
+          </dl>
+
+          <button
+            type="button"
+            disabled={!valid || !market}
+            onClick={() => setReviewing(true)}
+            className="btn-cta h-[46px] cursor-pointer text-[14px] disabled:opacity-50"
+          >
+            Review call
+          </button>
+        </div>
       </aside>
     </div>
   )
@@ -469,18 +484,19 @@ export function Composer({ markets }: { markets: Market[] }) {
 function Strip({
   markets,
   market,
+  live,
   onPick,
   children,
 }: {
   markets: Market[]
   market: Market | undefined
+  live: { value: number; dir: number }
   onPick: (address: string) => void
   children: React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const box = useRef<HTMLDivElement>(null)
-  const live = useLivePrice(market?.address, market?.price ?? 0)
   const change = market?.change24h ?? null
   const query = q.trim().toLowerCase()
   const shown = query
@@ -707,25 +723,73 @@ function CustomExpiry({ hours, onHours }: { hours: number; onHours: (h: number) 
   )
 }
 
-/** The call as followers will see it, then sign and publish. */
-function Review({
+/** The caller's linked X picture, for the call card. */
+function useAvatar(handle: string) {
+  const [avatar, setAvatar] = useState<string | null>(null)
+  useEffect(() => {
+    if (!handle) return
+    let live = true
+    fetch(`${API}/profiles/${encodeURIComponent(handle)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((p: { x?: { avatarUrl?: string | null } | null } | null) => {
+        if (live) setAvatar(p?.x?.avatarUrl ?? null)
+      })
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [handle])
+  return avatar
+}
+
+/**
+ * Review before publishing: the call card exactly as it previews on X, Telegram and WhatsApp,
+ * the numbers that matter, then sign and publish. Once it's live: post it on X, copy the link,
+ * or open the call.
+ */
+function ReviewModal({
   input,
-  asset,
+  market,
   cut,
+  sf,
+  caller,
   wallet,
-  onBack,
+  onClose,
 }: {
   input: CallInput
-  asset: string
+  market: Market
   cut: number
+  sf: number
+  caller: string
   wallet: string | undefined
-  onBack: () => void
+  onClose: () => void
 }) {
   const publish = usePublish()
   const [step, setStep] = useState<PublishStep | null>(null)
   const [error, setError] = useState<string>()
   const [id, setId] = useState<string>()
+  const [copied, setCopied] = useState(false)
+  const avatar = useAvatar(caller)
+  const [at] = useState(() => new Date().toISOString())
   const expiry = input.hours % 24 === 0 ? `${input.hours / 24}d` : `${input.hours}h`
+  const levels = { entry: input.entry, stop: input.stop, target: input.target }
+  const image = callImagePath({
+    asset: market.symbol,
+    name: market.name,
+    logo: market.imageUrl,
+    direction: input.direction,
+    ...levels,
+    createdAt: at,
+    caller,
+    avatar,
+    superFactor: sf,
+  })
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && step === null && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose, step])
 
   const go = async () => {
     if (!wallet) return setError('Your profile has no wallet yet')
@@ -733,87 +797,155 @@ function Review({
     try {
       setId(await publish(input, wallet, setStep))
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e))
+      const msg = e instanceof ApiError || e instanceof Error ? e.message : String(e)
+      setError(/reject|denied/i.test(msg) ? 'Cancelled in your wallet' : msg)
     } finally {
       setStep(null)
     }
   }
 
-  if (id) {
-    const link = `${window.location.origin}/c/${id}`
-    const text = `${input.direction === 'long' ? 'Long' : 'Short'} ${asset}: entry ${price(input.entry)}, stop ${price(input.stop)}, target ${price(input.target)}. Copy it on Supercall.`
-    return (
-      <div className="flex flex-col items-center gap-3 p-6 text-center">
-        <span className="grid size-12 place-items-center bg-good-soft text-[22px] text-good">
-          ✓
-        </span>
-        <h2 className="text-[20px] font-medium">Your call is live</h2>
-        <p className="text-[13px] text-muted">
-          It’s on Arkiv: nobody can edit or delete it. Share it so people can copy it.
-        </p>
-        <div className="mt-2 grid w-full grid-cols-2 gap-2">
-          <a
-            href={`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex h-11 items-center justify-center border border-line-strong bg-sidebar text-[13px] hover:bg-surface-2"
-          >
-            Post on X
-          </a>
-          <Link
-            href={`/c/${id}`}
-            className="btn-cta flex h-11 items-center justify-center text-[13px]"
-          >
-            Open the call
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col gap-5 p-5">
-      <dl className="flex flex-col gap-3 text-[13px]">
-        {[
-          ['Call', `${input.direction === 'long' ? 'Long' : 'Short'} ${asset}/USDC`],
-          ['Target', price(input.target)],
-          ['Entry', `${price(input.entry)} ± ${(input.bandPct * 100).toFixed(2)}%`],
-          ['Stop', price(input.stop)],
-          ['Expires in', expiry],
-          ['Your cut', `${pct(cut)} of kept fees`],
-          ['Boost', input.boost ? `${Math.round(input.boost * 100)} pts of your cut` : 'Off'],
-        ].map(([k, v]) => (
-          <div key={k} className="flex justify-between">
-            <dt className="text-muted">{k}</dt>
-            <dd className="tabular-nums">{v}</dd>
+    // biome-ignore lint/a11y/noStaticElementInteractions: a click on the backdrop closes; Escape does too
+    <div
+      role="presentation"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+      onMouseDown={(e) => e.target === e.currentTarget && step === null && onClose()}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Review your call"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[1100px] flex-col border border-line-strong bg-surface shadow-pop"
+      >
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-5">
+          <span className="text-[15px] font-medium">
+            {id ? 'Your call is live' : 'Review your call'}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={step !== null}
+            aria-label="Close"
+            className="grid size-8 cursor-pointer place-items-center text-muted hover:bg-surface-2 hover:text-ink"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="grid min-h-0 gap-6 overflow-y-auto p-5 lg:grid-cols-[minmax(0,600px)_minmax(0,1fr)]">
+          <div className="flex min-w-0 flex-col gap-2">
+            <img
+              src={image}
+              alt={`${market.symbol} ${input.direction} call card`}
+              width={1200}
+              height={630}
+              className="aspect-[1200/630] w-full border border-line bg-surface-2"
+            />
+            <div className="flex items-center justify-between gap-3 text-[12px] text-muted">
+              <span>This card shows wherever the call is shared: X, Telegram, WhatsApp.</span>
+              <a
+                href={image}
+                target="_blank"
+                rel="noreferrer"
+                className="shrink-0 text-ink underline"
+              >
+                Open image
+              </a>
+            </div>
           </div>
-        ))}
-      </dl>
-      {input.thesis && (
-        <p className="border-l border-line-strong pl-3 text-[13px] text-silver">“{input.thesis}”</p>
-      )}
-      <p className="text-[12px] text-muted">
-        Publishing signs the call with your wallet and writes it to Arkiv. It can’t be edited or
-        deleted, and it counts toward your SuperFactor.
-      </p>
-      {error && <p className="text-[12px] text-bad">{error}</p>}
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={step !== null}
-          className="h-11 cursor-pointer border border-line-strong bg-sidebar text-[13px] disabled:opacity-50"
-        >
-          Back
-        </button>
-        <button
-          type="button"
-          onClick={() => void go()}
-          disabled={step !== null}
-          className="btn-cta h-11 cursor-pointer text-[13px] disabled:opacity-70"
-        >
-          {step ? PUBLISH_STEP[step] : error ? 'Try again' : 'Publish'}
-        </button>
+
+          <div className="flex min-w-0 flex-col">
+            <dl className="flex flex-col gap-2.5 text-[13px]">
+              {[
+                ['Call', `${input.direction === 'long' ? 'Long' : 'Short'} ${market.symbol}/USDC`],
+                ['Entry', `${price(input.entry)} ± ${(input.bandPct * 100).toFixed(2)}%`],
+                ['Target', price(input.target), 'text-good'],
+                ['Stop', price(input.stop), 'text-bad'],
+                ['Reward to risk', `${rewardRisk(levels).toFixed(1)}×`],
+                ['Expires in', expiry],
+                ['Your cut', `${pct(cut)} of kept fees`],
+                [
+                  'If $1,000 is copied and you’re right',
+                  `+${usd(1000 * CALL_FEE * cut)}`,
+                  'text-good',
+                ],
+                ['If wrong', 'Fees back to followers, plus credit', 'text-muted'],
+              ].map(([k, v, tone]) => (
+                <div key={k} className="flex justify-between gap-4">
+                  <dt className="text-muted">{k}</dt>
+                  <dd className={cx('text-right tabular-nums', tone)}>{v}</dd>
+                </div>
+              ))}
+            </dl>
+            {input.thesis && (
+              <p className="mt-4 border-l border-line-strong pl-3 text-[13px] break-words text-silver">
+                “{input.thesis}”
+              </p>
+            )}
+            <p className="mt-4 text-[12px] text-muted">
+              Published calls are permanent: signed by your wallet, written to Arkiv, and counted
+              toward your SuperFactor.
+            </p>
+            {error && <p className="mt-3 text-[12px] break-words text-bad">{error}</p>}
+
+            <div className="mt-auto flex flex-col gap-2 pt-6">
+              {id ? (
+                <>
+                  <a
+                    href={postOnX({
+                      id,
+                      asset: market.symbol,
+                      ...levels,
+                      direction: input.direction,
+                    })}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-cta flex h-12 items-center justify-center text-[15px]"
+                  >
+                    Post it on X
+                  </a>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void navigator.clipboard
+                          ?.writeText(callLink(id))
+                          .then(() => setCopied(true))
+                      }
+                      className="h-10 cursor-pointer border border-line-strong bg-sidebar text-[13px] hover:bg-surface-2"
+                    >
+                      {copied ? 'Link copied' : 'Copy link'}
+                    </button>
+                    <Link
+                      href={`/c/${id}`}
+                      className="flex h-10 items-center justify-center border border-line-strong bg-sidebar text-[13px] hover:bg-surface-2"
+                    >
+                      Open the call
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void go()}
+                  disabled={step !== null}
+                  className="btn-cta h-12 cursor-pointer text-[15px] disabled:opacity-70"
+                >
+                  {step ? PUBLISH_STEP[step] : error ? 'Try again' : 'Publish call'}
+                </button>
+              )}
+              {!id && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={step !== null}
+                  className="h-10 cursor-pointer border border-line-strong bg-sidebar text-[13px] hover:bg-surface-2 disabled:opacity-50"
+                >
+                  Back to chart
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

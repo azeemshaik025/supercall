@@ -3,7 +3,15 @@ import type { ReactNode } from 'react'
 import { Providers } from '@/lib/privy'
 import './globals.css'
 
+/** Where link previews point their images: the deployed site, or this machine in dev. */
+const site =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.NODE_ENV === 'production'
+    ? 'https://supercall.unitlabs.xyz'
+    : 'http://localhost:3000')
+
 export const metadata: Metadata = {
+  metadataBase: new URL(site),
   title: 'Supercall',
   description: 'Trading calls where callers get paid only when they’re right.',
   icons: {
