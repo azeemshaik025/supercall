@@ -95,7 +95,7 @@ export function useCallerSetup() {
       const reason = e instanceof Error ? e.message : String(e)
       setError(
         reason === 'Failed to fetch'
-          ? 'Can’t reach the API. Is it running on port 3001?'
+          ? 'Can’t reach the API. Try again in a moment.'
           : `Couldn’t check your account: ${reason}`,
       )
       setStep('error')

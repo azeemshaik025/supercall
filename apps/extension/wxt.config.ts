@@ -5,7 +5,7 @@ import { defineConfig } from 'wxt'
 // An extension can't read .env at run time, so the URLs are written in at build time.
 const env = fileURLToPath(new URL('../../.env', import.meta.url))
 if (existsSync(env)) process.loadEnvFile(env)
-const api = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787'
+const api = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 const web = (process.env.WEB_ORIGIN ?? 'http://localhost:3000').replace(/,.*/, '').trim()
 // Every origin the Supercall site runs on: its sign-in is the extension's (entrypoints/site.ts).
 const sites = (process.env.WEB_ORIGIN ?? 'http://localhost:3000')

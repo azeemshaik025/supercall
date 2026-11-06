@@ -223,23 +223,25 @@ export function ProfileForm() {
           }
         />
       </section>
-      <section
-        className="flex flex-wrap items-center gap-4 border border-line-strong p-5 text-white"
-        style={{ background: 'var(--sc-brand)' }}
-      >
-        <span className="flex flex-[1_1_280px] flex-col gap-1">
-          <span className="text-[16px] font-medium">Caller record is live</span>
-          <span className="text-[13px] text-white/90">
-            Signed once. Your posts on X are read as calls from now on.
-          </span>
-        </span>
-        <Link
-          href="/compose"
-          className="flex h-[38px] items-center bg-ink px-3.5 text-[13px] font-medium text-bg"
+      {caller.step === 'done' && (
+        <section
+          className="flex flex-wrap items-center gap-4 border border-line-strong p-5 text-white"
+          style={{ background: 'var(--sc-brand)' }}
         >
-          Publish a call
-        </Link>
-      </section>
+          <span className="flex flex-[1_1_280px] flex-col gap-1">
+            <span className="text-[16px] font-medium">Caller record is live</span>
+            <span className="text-[13px] text-white/90">
+              Signed once. Your posts on X are read as calls from now on.
+            </span>
+          </span>
+          <Link
+            href="/compose"
+            className="flex h-[38px] items-center bg-ink px-3.5 text-[13px] font-medium text-bg"
+          >
+            Publish a call
+          </Link>
+        </section>
+      )}
     </div>
   )
 }
