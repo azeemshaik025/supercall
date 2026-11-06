@@ -140,15 +140,20 @@ export function createHisaab({
       return send(() => wallet.writeContract(request))
     },
 
-    isRegistered: async (call: Hex) =>
-      (
-        await reader.readContract({
+    isRegistered: async (call: Hex) => {
+      try {
+        const c = await reader.readContract({
           address: chain.hisaab,
           abi: hisaabAbi,
           functionName: 'getCall',
           args: [call],
         })
-      ).deadline !== 0n,
+        return c.deadline !== 0n
+      } catch (e) {
+        if (refusal(e) === 'InvalidCall') return false
+        throw e
+      }
+    },
 
     ended: async (call: Hex) => {
       const c = await reader.readContract({
