@@ -32,7 +32,6 @@
 .sc-note,
 .sc-badge-pill,
 .sc-pbadge,
-.sc-prow,
 .sc-panel,
 .sc-panel a,
 .sc-card button,
@@ -389,23 +388,6 @@
   text-decoration: underline;
 }
 
-/* Beside the name: the SuperFactor link, then the verified-human seal. */
-.sc-prow {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-}
-.sc-phuman {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--good);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 18px;
-}
-
 /* Under the follow counts on a caller's profile, in the same look as them. */
 .sc-panel {
   display: flex;
@@ -416,14 +398,6 @@
   color: var(--muted);
   font-size: 15px;
   line-height: 20px;
-}
-.sc-panel-brand {
-  display: inline-flex;
-  margin-right: -8px;
-}
-.sc-panel-brand .mark {
-  width: 16px;
-  height: 16px;
 }
 .sc-pstat b {
   color: var(--ink);

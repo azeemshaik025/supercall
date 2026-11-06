@@ -22,48 +22,19 @@ function SuperFactor({ value }: { value: number }) {
   )
 }
 
-/** A seal with a check: verified a unique human with World ID. */
-function Human() {
-  return (
-    <span
-      className="sc-phuman"
-      title="Verified human with World ID: one person, one caller account"
-    >
-      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-        <path
-          fill="currentColor"
-          d="M12 1.5l2.6 1.9 3.2-.1 1 3 2.6 1.9-1 3.1 1 3.1-2.6 1.9-1 3-3.2-.1L12 22.5l-2.6-1.9-3.2.1-1-3-2.6-1.9 1-3.1-1-3.1 2.6-1.9 1-3 3.2.1z"
-        />
-        <path
-          d="M7.8 12.2l2.8 2.8 5.6-5.8"
-          fill="none"
-          stroke="var(--night)"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      Verified human
-    </span>
-  )
-}
-
-/** Beside the name on a caller's X profile: the mark, their SuperFactor, and whether they're a verified human. */
+/** Beside the name on a caller's X profile: the mark and their SuperFactor. */
 export function ProfileBadge({ caller, web }: { caller: Caller; web: string }) {
   return (
-    <span className="sc-prow">
-      <a
-        className="sc-pbadge"
-        href={`${web}/u/${caller.handle}`}
-        target="_blank"
-        rel="noreferrer"
-        title={`${caller.displayName} on Supercall`}
-      >
-        <Mark />
-        <SuperFactor value={caller.superFactor} />
-      </a>
-      {caller.verified && <Human />}
-    </span>
+    <a
+      className="sc-pbadge"
+      href={`${web}/u/${caller.handle}`}
+      target="_blank"
+      rel="noreferrer"
+      title={`${caller.displayName} on Supercall`}
+    >
+      <Mark />
+      <SuperFactor value={caller.superFactor} />
+    </a>
   )
 }
 
@@ -89,15 +60,6 @@ export function ProfilePanel({ caller, web }: { caller: Caller; web: string }) {
   ]
   return (
     <section className="sc-panel" aria-label="Supercall record">
-      <a
-        className="sc-panel-brand"
-        href={`${web}/u/${caller.handle}`}
-        target="_blank"
-        rel="noreferrer"
-        title="View calls on Supercall"
-      >
-        <Mark />
-      </a>
       {stats.map(([value, label]) => (
         <span key={label} className="sc-pstat">
           <b>{value}</b> {label}
