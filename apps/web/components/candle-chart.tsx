@@ -269,6 +269,8 @@ export function CandleChart({
   height,
   label,
   precision = 2,
+  pick = null,
+  onPicked,
 }: {
   candles: Candle[]
   levels?: Levels
@@ -282,6 +284,10 @@ export function CandleChart({
   height: number
   label: string
   precision?: number
+  /** A level waiting to be placed: the next click on the chart puts it at that price. */
+  pick?: Level | null
+  /** After a pick lands, so the form can drop the picking state. */
+  onPicked?: () => void
 }) {
   const box = useRef<HTMLDivElement>(null)
   const chartRef = useRef<Chart | null>(null)
@@ -507,6 +513,28 @@ export function CandleChart({
       })
     }
   }, [levels, band, pnl, built, precision])
+
+  // Picking a level: a click on the chart places it at the clicked price.
+  const onPickedRef = useRef(onPicked)
+  onPickedRef.current = onPicked
+  useEffect(() => {
+    const el = box.current
+    const chart = chartRef.current
+    if (!pick || !el || !chart || !built) return
+    const place = (e: MouseEvent) => {
+      const y = e.clientY - el.getBoundingClientRect().top
+      const found = chart.convertFromPixel([{ y }], { paneId: 'candle_pane' })
+      const value = (Array.isArray(found) ? found[0] : found)?.value
+      if (value !== undefined && value > 0) onLevelRef.current?.(pick, value)
+      onPickedRef.current?.()
+    }
+    el.addEventListener('click', place)
+    el.style.cursor = 'crosshair'
+    return () => {
+      el.removeEventListener('click', place)
+      el.style.cursor = ''
+    }
+  }, [pick, built])
 
   return (
     <div ref={box} role="img" aria-label={label} style={{ height }} className="w-full min-w-0" />
