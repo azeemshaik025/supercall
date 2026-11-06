@@ -170,32 +170,46 @@ function Panel() {
     return () => browser.runtime.onMessage.removeListener(heard)
   }, [])
   return (
-    <main className="sc-panel">
+    <main className="sc-shell">
       <header className="sc-head">
-        <img src="/icon-light/32.png" alt="" />
-        Supercall
+        <span className="sc-brand">
+          <img src="/icon-light/32.png" alt="" />
+          Supercall
+        </span>
+        <span className="sc-chip">Arc testnet</span>
       </header>
-      {!ready ? (
-        <p className="sc-muted">Loading…</p>
-      ) : authenticated ? (
-        <Account />
-      ) : (
-        <section className="sc-box">
-          <p>Sign in with X, email or a wallet. It’s the same account as on the Supercall site.</p>
-          <button
-            type="button"
-            className="sc-button"
-            onClick={() => browser.runtime.sendMessage({ type: 'sign-in' } satisfies Message)}
-          >
-            Sign in
-          </button>
-        </section>
-      )}
-      {pending ? (
-        <Copy id={pending.id} call={call} />
-      ) : (
-        <p className="sc-muted">Tap Copy under a call on X to copy it here.</p>
-      )}
+      <div className="sc-body">
+        {!ready ? (
+          <p className="sc-muted">Loading…</p>
+        ) : authenticated ? (
+          <Account />
+        ) : (
+          <>
+            <div className="sc-hero">
+              <h1>
+                Super easy to copy.
+                <br />
+                <span>Super hard to fake.</span>
+              </h1>
+              <p className="sc-muted">Same account and wallet as the Supercall site.</p>
+            </div>
+            <button
+              type="button"
+              className="sc-button"
+              onClick={() => browser.runtime.sendMessage({ type: 'sign-in' } satisfies Message)}
+            >
+              Sign in
+            </button>
+            <p className="sc-methods">X · Email · Wallet</p>
+          </>
+        )}
+        {pending ? (
+          <Copy id={pending.id} call={call} />
+        ) : (
+          <p className="sc-hint">Tap Copy under a call on X to copy it here.</p>
+        )}
+      </div>
+      <div className="sc-dither" aria-hidden="true" />
     </main>
   )
 }

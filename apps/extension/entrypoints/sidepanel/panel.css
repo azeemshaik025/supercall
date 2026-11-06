@@ -31,6 +31,26 @@ body {
   padding: 16px;
   min-height: 100vh;
 }
+.sc-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.sc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 16px 0;
+}
+/* The landing's dither under everything, faded in from the page so it never sits behind text. */
+.sc-dither {
+  flex: 1;
+  min-height: 180px;
+  margin-top: 24px;
+  background:
+    linear-gradient(var(--night) 0%, #04090e00 45%),
+    url("/dither.svg") center bottom / cover no-repeat;
+}
 .sc-center {
   align-items: center;
   justify-content: center;
@@ -38,12 +58,61 @@ body {
 .sc-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--edge);
+}
+.sc-brand {
+  display: flex;
+  align-items: center;
   gap: 8px;
   font-weight: 600;
+  font-size: 15px;
 }
-.sc-head img {
+.sc-brand img {
   width: 22px;
   height: 22px;
+}
+.sc-chip {
+  padding: 3px 7px;
+  border: 1px solid var(--edge);
+  font:
+    10px / 1.4 "Geist Mono",
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sc-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 6px;
+}
+.sc-hero h1 {
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+.sc-hero h1 span {
+  color: #9cc2ff;
+}
+.sc-methods {
+  text-align: center;
+  font:
+    11px / 1.4 "Geist Mono",
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sc-hint {
+  padding: 12px 14px;
+  border: 1px dashed var(--edge);
+  color: var(--muted);
 }
 .sc-box {
   display: flex;
