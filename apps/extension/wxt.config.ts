@@ -20,6 +20,9 @@ export default defineConfig({
   dev: { server: { port: 3300 } },
   manifest: {
     name: 'Supercall',
+    description:
+      'See which X posts are real trade calls, the caller’s SuperFactor, and copy a call from your own wallet.',
+    homepage_url: web,
     // sidePanel: the account, wallet and copy sheet live in Chrome's side panel.
     permissions: ['storage', 'sidePanel'],
     // A toolbar button, so its icon can follow the browser's theme (entrypoints/background.ts).
