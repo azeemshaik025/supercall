@@ -55,7 +55,13 @@ export function ProfilePanel({ caller, web }: { caller: Caller; web: string }) {
     [usd(caller.earnedUsd), 'Earned'],
     [usd(caller.returnedToFollowersUsd), 'Paid back'],
     ...(settled
-      ? [[`${caller.followersProfitablePct}%`, 'Followers in profit'] as [string, string]]
+      ? ([
+          [
+            `${caller.followersNetUsd < 0 ? '−' : '+'}${usd(Math.abs(caller.followersNetUsd))}`,
+            'Followers made',
+          ],
+          [`${caller.followersProfitablePct}%`, 'Followers in profit'],
+        ] as [string, string][])
       : []),
   ]
   return (
