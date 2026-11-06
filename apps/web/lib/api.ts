@@ -58,8 +58,8 @@ export type ApiMarket = {
   imageUrl: string | null
 }
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}${path}`, { next: { revalidate: 30 } })
+async function get<T>(path: string, revalidate = 30): Promise<T> {
+  const res = await fetch(`${API}${path}`, { next: { revalidate } })
   if (!res.ok) throw new Error(`API ${path}: ${res.status}`)
   return res.json()
 }
@@ -69,7 +69,8 @@ export async function fetchCalls(opts?: { status?: string; limit?: number }): Pr
   if (opts?.status) params.set('status', opts.status)
   if (opts?.limit) params.set('limit', String(opts.limit))
   const qs = params.toString()
-  const data = await get<z.infer<typeof callsResponse>>(`/calls${qs ? `?${qs}` : ''}`)
+  // Fresh enough that a new call shows on the next auto-refresh.
+  const data = await get<z.infer<typeof callsResponse>>(`/calls${qs ? `?${qs}` : ''}`, 5)
   return data.calls
 }
 

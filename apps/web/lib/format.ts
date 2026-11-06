@@ -31,7 +31,7 @@ export function pct(v: number, digits = 1): string {
   return `${v >= 0 ? '+' : '−'}${(Math.abs(v) * 100).toFixed(digits)}%`
 }
 
-/** "1d 14h" from now until iso, against the fixed demo clock. */
+/** "1d 14h" from `now` until iso. */
 export function timeLeft(iso: string, now: Date): string {
   const ms = new Date(iso).getTime() - now.getTime()
   if (ms <= 0) return 'Ended'

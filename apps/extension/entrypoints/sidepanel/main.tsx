@@ -308,8 +308,61 @@ function Caller({ me, caller }: { me: Me; caller: MyCaller | null | undefined })
   )
 }
 
-function Copy({ id, call }: { id: string; call: Call | null | undefined }) {
+type MyCopy = {
+  call: string
+  payFeeTx: string
+  sizeUsd: number
+  status: string | null
+  closed: { gotUsd: number } | null
+  fill: { coin: number; price: number } | null
+}
+const WORKING = ['ORDER_STATUS_PENDING', 'ORDER_STATUS_ACCEPTED', 'ORDER_STATUS_PARTIALLY_FILLED']
+/** A copy's order in words, with the panel's tone class. */
+function copyState(c: MyCopy) {
+  if (c.closed) return { label: c.closed.gotUsd > 0 ? 'Sold' : 'Selling', tone: 'sc-muted' }
+  if (c.fill) return { label: `Filled at ${c.fill.price.toLocaleString()}`, tone: 'sc-good' }
+  if (c.status === null || WORKING.includes(c.status))
+    return { label: 'Waiting to fill', tone: 'sc-warn' }
+  if (c.status === 'ORDER_STATUS_CANCELLED') return { label: 'Cancelled', tone: 'sc-muted' }
+  return { label: 'Not filled', tone: 'sc-bad' }
+}
+
+/**
+ * Your copies of one call, read every 5 seconds while the panel shows it: a copy signed in the
+ * Supercall window shows up here, and its order moves from waiting to filled, without a reload.
+ */
+function useMyCopies(token: string | null, wallet: string | undefined, callId: string) {
+  const [copies, setCopies] = useState<MyCopy[]>([])
+  useEffect(() => {
+    if (!token || !wallet) return setCopies([])
+    let live = true
+    const read = () =>
+      api<{ copies: MyCopy[] }>(`/wallets/${wallet}/copies`, { token })
+        .then((r) => live && setCopies(r.copies.filter((c) => c.call === callId)))
+        .catch(() => {})
+    void read()
+    const timer = setInterval(read, 5000)
+    return () => {
+      live = false
+      clearInterval(timer)
+    }
+  }, [token, wallet, callId])
+  return copies
+}
+
+function Copy({
+  id,
+  call,
+  token,
+  wallet,
+}: {
+  id: string
+  call: Call | null | undefined
+  token: string | null
+  wallet: string | undefined
+}) {
   const [size, setSize] = useState('100')
+  const mine = useMyCopies(token, wallet, id)
   const dollars = Number(size)
   const fee = Number.isFinite(dollars) && dollars > 0 ? feeOf(toMicro(dollars)) : undefined
   if (call === undefined) return <section className="sc-box sc-muted">Loading the call…</section>
@@ -377,6 +430,23 @@ function Copy({ id, call }: { id: string; call: Call | null | undefined }) {
       <p className="sc-muted sc-small">
         Opens a Supercall window to sign the fee and the order with your wallet.
       </p>
+      {mine.length > 0 && (
+        <div className="sc-copies">
+          <span className="sc-label">Your copies</span>
+          {mine.map((c) => {
+            const st = copyState(c)
+            return (
+              <div key={c.payFeeTx} className="sc-row">
+                <span className="sc-mono">{usd(c.sizeUsd)}</span>
+                <span className={st.tone}>{st.label}</span>
+              </div>
+            )
+          })}
+          <button type="button" className="sc-link" onClick={() => openSite('/me')}>
+            Open Portfolio
+          </button>
+        </div>
+      )}
     </section>
   )
 }
@@ -444,7 +514,12 @@ function Panel() {
         )}
         {error && <p className="sc-bad sc-small">Couldn’t read your account: {error}</p>}
         {pending ? (
-          <Copy id={pending.id} call={call} />
+          <Copy
+            id={pending.id}
+            call={call}
+            token={session.token}
+            wallet={me?.profile?.wallet ?? me?.account.wallets[0]}
+          />
         ) : (
           <p className="sc-hint">Tap Copy under a call on X to copy it here.</p>
         )}
