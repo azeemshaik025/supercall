@@ -287,18 +287,20 @@ export function postRoutes(deps: {
     progress.written = true
     const { key, fingerprint, txHash } = await arkiv.writeCall(payload)
     await store.record(post.id, { verdict: 'call', call: key, reading })
+    const entering = payload.type === 'open'
     const status = {
-      v: 2,
+      v: 2 as const,
       call: key,
       caller: caller.key,
       asset: payload.asset,
-      status: 'armed',
-      supercall: false,
+      status: entering ? ('live' as const) : ('armed' as const),
+      supercall: false as const,
       superFactor: Math.floor(sf),
       boostBps: 0,
-      followBand: 'low',
-      opposeBand: 'low',
-    } as const
+      followBand: 'low' as const,
+      opposeBand: 'low' as const,
+      ...(entering ? { entryFilledAt: posted } : {}),
+    }
     const statusKey = await arkiv.writeStatus(status, payload.deadline)
     snapshot.stale()
     let registerTx: Hex | null = null

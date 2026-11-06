@@ -338,19 +338,20 @@ export function publishRoutes(deps: {
       )
 
     const { key, fingerprint } = await arkiv.writeCall(call)
-    // A call opens for copying at once; a supercall waits for the caller's order (spec, "A call's life").
+    const entering = call.type === 'open'
     await arkiv.writeStatus(
       {
         v: 2,
         call: key,
         caller: record.key,
         asset: call.asset,
-        status: 'armed',
+        status: entering ? 'live' : 'armed',
         supercall: false,
         superFactor: Math.floor(built.sf),
         boostBps: call.boostBps,
         followBand: 'low',
         opposeBand: 'low',
+        ...(entering ? { entryFilledAt: call.createdAt } : {}),
       },
       call.deadline,
     )
