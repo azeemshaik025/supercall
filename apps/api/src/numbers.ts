@@ -39,8 +39,49 @@ const FIXED: Record<string, number> = {
   'end of the month': 30 * DAY,
 }
 
-const UNITS: Record<string, number> = { h: HOUR, d: DAY, w: 7 * DAY, month: 30 * DAY }
-const LENGTH = /^(\d+(?:\.\d+)?)\s*(h|hrs?|hours?|d|days?|w|wks?|weeks?|months?)$/
+const UNITS: Record<string, number> = {
+  min: 60,
+  h: HOUR,
+  d: DAY,
+  w: 7 * DAY,
+  month: 30 * DAY,
+}
+/** A length's unit, however it's written: "m", "mins", "hr", "hrs", "days", "wks", "mo". */
+const UNIT = '(m|mins?|minutes?|h|hrs?|hours?|d|days?|w|wks?|weeks?|mos?|months?)'
+const LENGTH = new RegExp(`^(\\d+(?:\\.\\d+)?)\\s*-?\\s*${UNIT}$`)
+/** A unit alone, as in "next hour" or "an hour": one of it. */
+const ONE = new RegExp(`^${UNIT}$`)
+const unitOf = (u: string) =>
+  u.startsWith('mo') ? 'month' : u === 'm' || u.startsWith('min') ? 'min' : (u[0] ?? '')
+
+// Numbers people write in words: "three hours", "an hour", "half a day".
+const WORD_NUMBERS: Record<string, string> = {
+  a: '1',
+  an: '1',
+  one: '1',
+  two: '2',
+  three: '3',
+  four: '4',
+  five: '5',
+  six: '6',
+  seven: '7',
+  eight: '8',
+  nine: '9',
+  ten: '10',
+  eleven: '11',
+  twelve: '12',
+  fifteen: '15',
+  twenty: '20',
+  thirty: '30',
+  'twenty four': '24',
+  'twenty-four': '24',
+  'forty eight': '48',
+  'forty-eight': '48',
+}
+// Words around a length that don't change it: "the next 3 hours or so", "a 2h window", "1h max".
+const LEAD =
+  /^(by|in|within|until|till|for|over|during|before|around|about|roughly|~|the|next|coming|following|upcoming|a|an)\s+/
+const TRAIL = /\s+(or so|or less|max|tops|at most|window|timeframe|time frame|from now|ahead|out)$/
 
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 const MONTHS = [
@@ -63,24 +104,45 @@ const named = (names: string[], word = '') =>
 const DATE = /^(?:(\d{1,2})(?:st|nd|rd|th)? ([a-z]+)|([a-z]+) (\d{1,2})(?:st|nd|rd|th)?)$/
 
 /**
+ * A stretch of time in seconds, written any of the usual ways: "3h", "3 hours", "next 3 hours",
+ * "over the next hour", "three hours", "half an hour", "90 mins", "a 2h window", "24hrs or so".
+ * Undefined for anything that isn't a length ("next Friday" is a day, not a length).
+ */
+function lengthOf(text: string): number | undefined {
+  let w = text
+  for (let i = 0; i < 4 && LEAD.test(w); i++) w = w.replace(LEAD, '')
+  for (let i = 0; i < 2 && TRAIL.test(w); i++) w = w.replace(TRAIL, '')
+  for (const [word, digits] of Object.entries(WORD_NUMBERS).sort(
+    (a, b) => b[0].length - a[0].length,
+  ))
+    if (w.startsWith(`${word} `)) w = `${digits} ${w.slice(word.length + 1)}`
+  const half = /^half (?:an? )?(.+)$/.exec(w)
+  if (half?.[1]) {
+    const unit = ONE.exec(half[1])?.[1]
+    return unit ? (UNITS[unitOf(unit)] ?? 0) / 2 : undefined
+  }
+  const length = LENGTH.exec(w)
+  if (length?.[2]) return Number(length[1]) * (UNITS[unitOf(length[2])] ?? 0) || undefined
+  const one = ONE.exec(w)?.[1]
+  return one ? UNITS[unitOf(one)] : undefined
+}
+
+/**
  * When a call made at `posted` (unix seconds) ends, from its deadline words, or undefined when the
  * words aren't in the table. A named day ends at midnight UTC; a date is in the post's year.
  */
 export function deadlineOf(words: string, posted: number): number | undefined {
   const w = words
     .toLowerCase()
-    .replace(/[.!,]+$/, '')
-    .replace(/^(by|in|within|until)\s+/, '')
+    .replace(/[.!,;:)]+$/, '')
     .replace(/\s+/g, ' ')
     .trim()
+    .replace(/^(by|in|within|until|till)\s+/, '')
   const fixed = FIXED[w]
   if (fixed) return posted + fixed
 
-  const length = LENGTH.exec(w)
-  if (length) {
-    const unit = length[2]?.startsWith('month') ? 'month' : (length[2]?.[0] ?? '')
-    return posted + Number(length[1]) * (UNITS[unit] ?? 0)
-  }
+  const length = lengthOf(w)
+  if (length !== undefined) return posted + length
 
   const day = new Date(posted * 1000)
   const startOfDay = Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()) / 1000
