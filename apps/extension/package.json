@@ -1,0 +1,26 @@
+{
+  "name": "@supercall/extension",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "typecheck": "wxt prepare && tsc",
+    "test": "vitest run",
+    "fake-lookup": "tsx scripts/fake-lookup.ts"
+  },
+  "dependencies": {
+    "@supercall/api-schema": "workspace:*",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@supercall/config": "workspace:*",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "happy-dom": "^21.0.4",
+    "wxt": "^0.21.4"
+  }
+}
