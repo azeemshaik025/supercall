@@ -20,7 +20,10 @@ const privyConfig: PrivyClientConfig = {
   defaultChain: arc,
   supportedChains: [arc],
   appearance: { theme: 'dark', walletChainType: 'ethereum-only' },
-  embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' } },
+  embeddedWallets: {
+    ethereum: { createOnLogin: 'users-without-wallets' },
+    showWalletUIs: false,
+  },
 }
 
 export function Providers({ children }: { children: ReactNode }) {
