@@ -84,7 +84,16 @@ function Note({
   )
 }
 
-export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean }) {
+export function CopyPanel({
+  call,
+  popup = false,
+  size: startSize,
+}: {
+  call: Call
+  popup?: boolean
+  /** The amount to start at, e.g. the size typed in the extension before opening this. */
+  size?: number
+}) {
   const { ready, authenticated, login } = usePrivy()
   const { me } = useMe()
   const wallet = authenticated ? walletOf(me) : undefined
@@ -93,7 +102,7 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
   const { copies } = useCopies(wallet)
   const mine = copies?.filter((c) => c.call === call.id) ?? []
   const [pctOfBalance, setPct] = useState<number | null>(null)
-  const [typed, setTyped] = useState('100')
+  const [typed, setTyped] = useState(startSize ? String(startSize) : '100')
   const [bought, setBought] = useState<(Copied & { size: number }) | null>(null)
   const [step, setStep] = useState<CopyStep | null>(null)
   const [error, setError] = useState<string>()
