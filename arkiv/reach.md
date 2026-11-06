@@ -14,6 +14,8 @@ Yes. The app is live at [supercall.unitlabs.xyz](https://supercall.unitlabs.xyz)
 
 Yes. The settlement pipeline, copy mechanics and super factor scoring are working. Next: finish the cross-chain deposit bridge (Base/Arbitrum/Ethereum to Arc USDC) so users can fund wallets without leaving the app, add direction and conviction filters to the explore feed, build a revenue model around the settlement fees and copy mechanics, and mature the product to handle more call types and market conditions.
 
+One feature that ties directly into Arkiv: callers will need to extend their own call records on Arkiv to keep them alive. Calls are burned and read-only (`permissionlessExtension`), so anyone can pay to extend them but nobody can edit them. If a caller stops extending their history, their super factor decays. This turns Arkiv's storage cost into a skin-in-the-game signal — a caller who pays to keep their record alive is one who stands behind it.
+
 ## A query anyone can run
 
 Every open call, read straight from Arkiv with no private key:
