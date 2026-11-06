@@ -274,6 +274,8 @@ export function copyRoutes(deps: {
       return { problem: [409, 'short', 'Short calls aren’t copyable yet'] as const }
     if (call.stop === undefined)
       return { problem: [409, 'no_stop', 'This call has no stop to attach'] as const }
+    if (call.deadline * 1000 <= Date.now())
+      return { problem: [409, 'ended', 'This call has ended: it settles in Hisaab'] as const }
     if (!canMirror(view))
       return { problem: [409, 'closed', 'Copying is closed: price left the entry zone'] as const }
     return { call, status, view, alongside: started as Promise<T> }
