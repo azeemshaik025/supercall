@@ -76,8 +76,10 @@ export function Sidebar() {
   const open = isPinned || hover
 
   return (
+    // Reserves the rail, or the full width when pinned. Not sticky: a sticky box makes its own
+    // stacking layer, which put the top bar over the panel. The shell keeps it in place instead.
     <div
-      className="sticky top-0 hidden h-screen shrink-0 lg:block"
+      className="relative hidden shrink-0 transition-[width] duration-300 ease-out md:block"
       style={{ width: isPinned ? FULL : RAIL }}
     >
       <aside
@@ -85,7 +87,8 @@ export function Sidebar() {
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         className={cx(
-          'absolute inset-y-0 left-0 z-40 flex flex-col overflow-hidden border-r border-line bg-sidebar',
+          'absolute inset-y-0 left-0 z-50 flex flex-col overflow-hidden border-r border-line bg-sidebar',
+          'transition-[width,box-shadow] duration-300 ease-out',
           !isPinned && hover && 'shadow-pop',
         )}
         style={{ width: open ? FULL : RAIL }}
@@ -126,7 +129,7 @@ export function Sidebar() {
 
         <nav
           className={cx(
-            'min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-4',
+            'min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-4 transition-[padding] duration-300 ease-out',
             open ? 'pt-1' : 'pt-4',
           )}
         >
@@ -135,7 +138,8 @@ export function Sidebar() {
               {g.title && (
                 <div
                   className={cx(
-                    'flex items-end overflow-hidden px-2.5 text-[12px] whitespace-nowrap text-faint transition-opacity duration-200',
+                    'flex items-end overflow-hidden px-2.5 text-[12px] whitespace-nowrap text-faint',
+                    'transition-[height,padding,opacity] duration-300 ease-out',
                     open ? 'h-11 pb-2.5 opacity-100' : 'h-0 pb-0 opacity-0',
                   )}
                 >
@@ -151,7 +155,7 @@ export function Sidebar() {
                     title={open ? undefined : item.label}
                     aria-current={on ? 'page' : undefined}
                     className={cx(
-                      'mb-1 flex h-[38px] items-center gap-[11px] border pl-2.5 text-[14px] whitespace-nowrap',
+                      'mb-1 flex h-[38px] items-center gap-[11px] border pl-2.5 text-[14px] whitespace-nowrap transition-colors',
                       on ? 'sheen text-ink' : 'border-transparent text-muted hover:text-ink',
                     )}
                   >
