@@ -203,6 +203,11 @@ body {
   border: 1px solid var(--edge);
   color: var(--ink);
   font: inherit;
+  outline: none;
+}
+/* Focus shows on the field's own border, as on the site, not as a ring around it. */
+.sc-input:focus {
+  border-color: var(--muted);
 }
 .sc-button {
   padding: 11px 14px;

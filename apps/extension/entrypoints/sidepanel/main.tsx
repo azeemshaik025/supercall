@@ -422,7 +422,8 @@ function Copy({
         onClick={() =>
           browser.runtime.sendMessage({
             type: 'open',
-            path: `/m/${encodeURIComponent(id)}`,
+            // The size typed here carries over, so the copy window opens at it.
+            path: `/m/${encodeURIComponent(id)}${dollars > 0 ? `?size=${encodeURIComponent(String(dollars))}` : ''}`,
           } satisfies Message)
         }
       >
