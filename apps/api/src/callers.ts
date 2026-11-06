@@ -91,13 +91,23 @@ export function callerRoutes(arkiv: Arkiv, priceOf: PriceOf, snapshot = arkivSna
    */
   app.get('/', async (c) => {
     const x = c.req.query('x')?.toLowerCase()
-    const wallet = c.req.query('wallet')?.toLowerCase() ?? ''
+    const wallet = c.req.query('wallet')?.toLowerCase()
     if (x !== undefined && !/^\w{1,15}$/.test(x))
       return c.json({ code: 'bad_x', detail: 'x: an X username' }, 400)
-    if (x === undefined && !isWallet(wallet))
+    // No params: list all callers from the snapshot.
+    if (x === undefined && wallet === undefined) {
+      const s = await snapshot.read()
+      return c.json({
+        callers: s.callers.map((r) => {
+          const calls = s.calls.filter((call) => call.caller === r.key)
+          return toCaller(r, calls.length, s.settlementsOf(r.key))
+        }),
+      })
+    }
+    if (x === undefined && !isWallet(wallet ?? ''))
       return c.json({ code: 'bad_wallet', detail: 'wallet: an address' }, 400)
     const { s, caller, calls } = await lookup((r) =>
-      x === undefined ? r.wallet === wallet : r.x?.username.toLowerCase() === x,
+      x === undefined ? r.wallet === (wallet ?? '') : r.x?.username.toLowerCase() === x,
     )
     return c.json({
       callers: caller ? [toCaller(caller, calls.length, s.settlementsOf(caller.key))] : [],
