@@ -1,15 +1,16 @@
 'use client'
 
 import { usePrivy } from '@privy-io/react-auth'
-import { MIN_TARGET_DISTANCE } from '@supercall/core'
+import { canMirror, MIN_TARGET_DISTANCE, rewardPct } from '@supercall/core'
 import Link from 'next/link'
 import { type CSSProperties, useEffect, useState } from 'react'
 import { ApiError } from '@/lib/api'
 import { COPY_STEP, type Copied, type CopyStep, orderState, useCopies, useCopy } from '@/lib/copy'
-import { statusLabel } from '@/lib/data'
+import { ENDED, statusLabel } from '@/lib/data'
 import { price, signedUsd, usd } from '@/lib/format'
+import { useLivePrice } from '@/lib/live-price'
 import { useMe, useUsdc, walletOf } from '@/lib/me'
-import { estimate, inBand } from '@/lib/money'
+import { estimate } from '@/lib/money'
 import type { Call } from '@/lib/types'
 import { cx, Info } from './ui'
 
@@ -94,29 +95,25 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
   const size =
     pctOfBalance === null ? Number(typed.replace(/,/g, '')) || 0 : (balance * pctOfBalance) / 100
   const fill = pctOfBalance ?? Math.min(100, balance > 0 ? (size / balance) * 100 : 0)
-  const est = estimate(call, size)
+  // Judged at the live price, so the panel opens and closes as price moves through the zone.
+  const { value: now } = useLivePrice(call.assetAddress, call.price)
+  const open = canMirror({ ...call, price: now })
+  const est = estimate({ ...call, price: now }, size)
   const long = call.direction === 'long'
 
-  if (call.status === 'pending' || call.status === 'armed') {
+  // The caller doesn't copy his own call: the API refuses it, so say so up front.
+  if (me?.profile?.username && me.profile.username === call.caller) {
     return (
       <Shell>
         <Note
-          tag="Not open yet"
+          tag="Your call"
           tone="muted"
-          text={`Copying opens when price reaches the entry at ${price(call.entry)} and the caller is in.`}
-          action={
-            <button
-              type="button"
-              className="h-11 cursor-pointer border border-line-strong bg-surface-2 text-[14px]"
-            >
-              Notify me when it opens
-            </button>
-          }
+          text="Followers copy it from here. Share it so they see it: its link previews as the call card on X."
         />
       </Shell>
     )
   }
-  if (call.status !== 'live') {
+  if (ENDED.includes(call.status)) {
     const st = statusLabel[call.status]
     return (
       <Shell>
@@ -128,18 +125,29 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
       </Shell>
     )
   }
+  if (call.status === 'pending') {
+    return (
+      <Shell>
+        <Note
+          tag="Not open yet"
+          tone="muted"
+          text={`@${call.caller} is backing this call with their own order. Copying opens once Flash has it.`}
+        />
+      </Shell>
+    )
+  }
   if (!long) {
     return (
       <Shell>
         <Note
           tag="Scored only"
           tone="muted"
-          text="Short calls can’t be copied yet. This call still counts toward the caller’s SuperFactor."
+          text="Short calls can’t be copied yet: Flash trades spot. This call still counts toward the caller’s SuperFactor."
         />
       </Shell>
     )
   }
-  if (Math.abs(call.target - call.entry) / call.entry < MIN_TARGET_DISTANCE) {
+  if (rewardPct(call) < MIN_TARGET_DISTANCE) {
     return (
       <Shell>
         <Note
@@ -150,21 +158,24 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
       </Shell>
     )
   }
-  if (!inBand(call)) {
+  if (!open && call.type === 'open') {
     return (
       <Shell>
         <Note
-          tag="Out of the entry band"
+          tag="Out of the entry zone"
           tone="warn"
-          text={`Copying is open while price is between ${price(call.entry * (1 - call.bandPct))} and ${price(call.entry * (1 + call.bandPct))}. Right now you’d buy worse than the caller.`}
-          action={
-            <button
-              type="button"
-              className="h-11 cursor-pointer border border-line-strong bg-surface-2 text-[14px]"
-            >
-              Notify me when it's back
-            </button>
-          }
+          text={`Copying is open while price is between ${price(call.entry * (1 - call.bandPct))} and ${price(call.entry * (1 + call.bandPct))}; it’s ${price(now)} now. It reopens as soon as price is back inside.`}
+        />
+      </Shell>
+    )
+  }
+  if (!open) {
+    return (
+      <Shell>
+        <Note
+          tag="Copying closed"
+          tone="muted"
+          text={`Price already reached the entry at ${price(call.entry)}: copies placed before then rest there. The call is tracked to its target, stop or deadline.`}
         />
       </Shell>
     )
@@ -346,6 +357,11 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
             <dd>{usd(est.fee)}</dd>
           </div>
         </dl>
+        {call.type === 'future-level' && (
+          <p className="text-[12px] text-muted">
+            Your buy rests at the entry, {price(call.entry)}, and fills when price gets there.
+          </p>
+        )}
         {error && <p className="text-[12px] text-bad">{error}</p>}
         <button
           type="button"
