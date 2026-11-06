@@ -2,26 +2,36 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MarketChart } from '@/components/market-chart'
 import { cx, SideTag, TokenIcon } from '@/components/ui'
-import { callerByHandle, marketBySymbol, markets, NOW, openCallsOn } from '@/lib/data'
+import {
+  callerByHandle,
+  getCalls,
+  getCallers,
+  getMarkets,
+  marketBySymbol,
+  openCallsOn,
+  statusLabel,
+} from '@/lib/data'
 import { pct, price, timeLeft, usdShort } from '@/lib/format'
-
-export function generateStaticParams() {
-  return markets.map((m) => ({ symbol: m.symbol.toLowerCase() }))
-}
 
 export default async function MarketPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params
-  const m = marketBySymbol(symbol)
+  const [markets, calls, callers] = await Promise.all([getMarkets(), getCalls(), getCallers()])
+  const m = marketBySymbol(markets, symbol)
   if (!m) notFound()
-  const open = openCallsOn(m.symbol)
+  const open = openCallsOn(calls, m.symbol)
+  const now = new Date()
   const stats = [
-    { k: '24h', v: pct(m.change24h, 2), tone: m.change24h >= 0 ? 'text-good' : 'text-bad' },
+    {
+      k: '24h',
+      v: pct(m.change24h ?? 0, 2),
+      tone: (m.change24h ?? 0) >= 0 ? 'text-good' : 'text-bad',
+    },
     {
       k: '$1k buy moves price',
-      v: pct(m.impact1k, 2).replace('+', ''),
-      tone: m.impact1k > 0.005 ? 'text-warn' : '',
+      v: pct(m.impact1k ?? 0, 2).replace('+', ''),
+      tone: (m.impact1k ?? 0) > 0.005 ? 'text-warn' : '',
     },
-    { k: 'Pool liquidity', v: usdShort(m.liquidityUsd) },
+    { k: 'Pool liquidity', v: usdShort(m.liquidityUsd ?? 0) },
   ]
   return (
     <div className="space-y-5">
@@ -53,7 +63,7 @@ export default async function MarketPage({ params }: { params: Promise<{ symbol:
             Make a call on {m.symbol}
           </Link>
         </div>
-        <MarketChart asset={m.symbol} />
+        <MarketChart address={m.address} currentPrice={m.price} asset={m.symbol} />
       </section>
       <section className="surface-card">
         <h2 className="px-4 py-3.5 text-[15px] font-medium">Open calls on {m.symbol}</h2>
@@ -70,17 +80,17 @@ export default async function MarketPage({ params }: { params: Promise<{ symbol:
             >
               <span className="flex flex-col gap-1">
                 <span className="flex items-center gap-2 font-medium">
-                  @{c.caller} <SideTag long={c.long} />
+                  @{c.caller} <SideTag long={c.direction === 'long'} />
                 </span>
                 <span className="text-[12px] text-muted">
-                  SF {callerByHandle(c.caller)?.superFactor ?? 50}
+                  SF {callerByHandle(callers, c.caller)?.superFactor ?? 50}
                 </span>
               </span>
               <span className="text-silver">
                 {price(c.stop)} to {price(c.target)}
               </span>
-              <span>{c.copiedUsd ? `${usdShort(c.copiedUsd)} copied` : 'Posted'}</span>
-              <span className="text-muted">{timeLeft(c.expiresAt, NOW)} left</span>
+              <span>{statusLabel[c.status].label}</span>
+              <span className="text-muted">{timeLeft(c.expiresAt, now)} left</span>
             </Link>
           ))
         )}

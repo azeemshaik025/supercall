@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { me } from '@/lib/data'
 import { cx, Icon } from './ui'
 
 type Item = { href: string; label: string; icon: string; active: (p: string) => boolean }
@@ -21,7 +20,7 @@ const groups: { title?: string; items: Item[] }[] = [
         href: '/callers',
         label: 'Callers',
         icon: 'callers',
-        active: (p) => p.startsWith('/callers') || (p.startsWith('/u/') && p !== `/u/${me.handle}`),
+        active: (p) => p.startsWith('/callers') || p.startsWith('/u/'),
       },
     ],
   },
@@ -41,12 +40,6 @@ const groups: { title?: string; items: Item[] }[] = [
     title: 'Account',
     items: [
       { href: '/me', label: 'Portfolio', icon: 'portfolio', active: (p) => p === '/me' },
-      {
-        href: `/u/${me.handle}`,
-        label: 'Profile',
-        icon: 'profile',
-        active: (p) => p === `/u/${me.handle}`,
-      },
       { href: '/profile', label: 'Settings', icon: 'settings', active: (p) => p === '/profile' },
     ],
   },
@@ -54,7 +47,6 @@ const groups: { title?: string; items: Item[] }[] = [
 
 const RAIL = 64
 const FULL = 236
-/** Chart-first pages open with the sidebar folded so the chart gets the room. */
 const chartFirst = (p: string) =>
   p.startsWith('/c/') || p === '/compose' || p.startsWith('/markets')
 
@@ -163,7 +155,7 @@ export function Sidebar() {
 
         <div className="flex shrink-0 items-center gap-2.5 border-t border-line px-4 py-3">
           <span className="grid size-8 shrink-0 place-items-center bg-surface-3 text-[13px] text-silver">
-            {me.handle[0]?.toUpperCase()}
+            ?
           </span>
           <span
             className={cx(
@@ -171,8 +163,7 @@ export function Sidebar() {
               open ? 'opacity-100' : 'opacity-0',
             )}
           >
-            <span className="text-[13px] font-medium">@{me.handle}</span>
-            <span className="font-mono text-[12px] text-muted">{me.address}</span>
+            <span className="text-[13px] text-muted">Connect wallet</span>
           </span>
         </div>
       </aside>

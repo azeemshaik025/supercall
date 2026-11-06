@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { me } from '@/lib/data'
 import { PageTitle } from './ui'
 
 function Row({
@@ -28,9 +27,6 @@ function Row({
   )
 }
 
-const ok = (t: string) => (
-  <span className="bg-good-soft px-2 py-0.5 text-[12px] text-good">{t}</span>
-)
 const tile = (c: React.ReactNode) => (
   <span className="grid size-9 shrink-0 place-items-center border border-line-strong bg-surface-2">
     {c}
@@ -38,8 +34,8 @@ const tile = (c: React.ReactNode) => (
 )
 
 export function ProfileForm() {
-  const [username, setUsername] = useState(me.handle)
-  const [name, setName] = useState('Rakesh')
+  const [username, setUsername] = useState('')
+  const [name, setName] = useState('')
   const [saved, setSaved] = useState(false)
   return (
     <div className="max-w-[760px] space-y-5">
@@ -84,9 +80,6 @@ export function ProfileForm() {
             Save
           </button>
           {saved && <span className="text-[13px] text-good">Saved</span>}
-          <Link href={`/u/${me.handle}`} className="ml-auto text-[13px] text-steel hover:text-ink">
-            View public page
-          </Link>
         </div>
       </section>
       <section aria-label="Connections" className="surface-card">
@@ -97,14 +90,28 @@ export function ProfileForm() {
             </svg>,
           )}
           title="X account"
-          sub={`Your posts on X are read as calls. Linked as @${me.xHandle}`}
-          right={ok('Linked')}
+          sub="Link your X account so your posts are read as calls."
+          right={
+            <button
+              type="button"
+              className="h-8 cursor-pointer border border-line-strong bg-sidebar px-3 text-[12px]"
+            >
+              Link
+            </button>
+          }
         />
         <Row
           icon={<img src="/brand/verified.svg" alt="" className="size-9" />}
           title="World ID"
-          sub="Proves you’re one human, so a bad run can’t be escaped with a new account. Needed to publish."
-          right={ok('Verified')}
+          sub="Proves you're one human, so a bad run can't be escaped with a new account. Needed to publish."
+          right={
+            <button
+              type="button"
+              className="h-8 cursor-pointer border border-line-strong bg-sidebar px-3 text-[12px]"
+            >
+              Verify
+            </button>
+          }
         />
         <Row
           icon={tile(
@@ -133,40 +140,31 @@ export function ProfileForm() {
           }
         />
         <Row
-          icon={<img src="/wallets/metamask.svg" alt="" className="size-9" />}
-          title="Publishing wallet"
-          sub={
-            <>
-              Your own trades on a call come from here, so followers can check them.{' '}
-              <span className="font-mono text-silver">{me.address}</span>
-            </>
-          }
+          icon={tile(
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              aria-hidden="true"
+            >
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="M3 10h18" />
+            </svg>,
+          )}
+          title="Wallet"
+          sub="Connect a wallet to copy calls and receive payouts on Arc."
           right={
             <button
               type="button"
               className="h-8 cursor-pointer border border-line-strong bg-sidebar px-3 text-[12px]"
             >
-              Change
+              Connect
             </button>
           }
         />
-      </section>
-      <section
-        className="flex flex-wrap items-center gap-4 border border-line-strong p-5 text-white"
-        style={{ background: 'var(--sc-brand)' }}
-      >
-        <span className="flex flex-[1_1_280px] flex-col gap-1">
-          <span className="text-[16px] font-medium">Caller record is live</span>
-          <span className="text-[13px] text-white/90">
-            Signed once. Your posts on X are read as calls from now on.
-          </span>
-        </span>
-        <Link
-          href="/compose"
-          className="flex h-[38px] items-center bg-ink px-3.5 text-[13px] font-medium text-bg"
-        >
-          Publish a call
-        </Link>
       </section>
     </div>
   )

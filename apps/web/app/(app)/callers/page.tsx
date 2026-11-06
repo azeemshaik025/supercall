@@ -1,9 +1,10 @@
 import { CallersTable } from '@/components/callers-table'
 import { PageTitle } from '@/components/ui'
-import { callers } from '@/lib/data'
+import { getCalls, getCallers } from '@/lib/data'
 import { usdShort } from '@/lib/format'
 
-export default function Callers() {
+export default async function Callers() {
+  const [callers, calls] = await Promise.all([getCallers(), getCalls()])
   const made = callers.reduce((s, c) => s + c.followersNetUsd, 0)
   const stats = [
     { k: 'Callers', v: String(callers.length), sub: 'one verified human each' },
@@ -15,7 +16,7 @@ export default function Callers() {
     },
     {
       k: 'In their funds',
-      v: usdShort(callers.reduce((s, c) => s + c.fundUsd, 0)),
+      v: usdShort(callers.reduce((s, c) => s + c.poolUsd, 0)),
       sub: 'credit for wrong calls',
     },
   ]
@@ -33,7 +34,7 @@ export default function Callers() {
           </div>
         ))}
       </div>
-      <CallersTable callers={callers} />
+      <CallersTable callers={callers} calls={calls} />
     </div>
   )
 }

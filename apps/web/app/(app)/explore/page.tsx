@@ -2,10 +2,11 @@ import { CallCard } from '@/components/call-card'
 import { CallsTable } from '@/components/calls-table'
 import { MarketsRow } from '@/components/markets-row'
 import { PageTitle } from '@/components/ui'
-import { callerByHandle, calls, isOpen } from '@/lib/data'
+import { callerByHandle, getCalls, getCallers, getMarkets, isOpen } from '@/lib/data'
 
-export default function Explore() {
-  const boosted = calls.filter((c) => c.boosted && isOpen(c.status))
+export default async function Explore() {
+  const [calls, callers, markets] = await Promise.all([getCalls(), getCallers(), getMarkets()])
+  const boosted = calls.filter((c) => c.boost && isOpen(c.status))
   return (
     <div className="space-y-8">
       <PageTitle title="Explore" sub="Calls from verified humans, paid only when right." />
@@ -26,12 +27,12 @@ export default function Explore() {
         </div>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
           {boosted.map((c) => (
-            <CallCard key={c.id} call={c} caller={callerByHandle(c.caller)} />
+            <CallCard key={c.id} call={c} caller={callerByHandle(callers, c.caller)} />
           ))}
         </div>
       </section>
-      <CallsTable calls={calls} />
-      <MarketsRow />
+      <CallsTable calls={calls} callers={callers} />
+      <MarketsRow markets={markets} />
     </div>
   )
 }

@@ -5,21 +5,21 @@ import { CallDetails } from '@/components/call-details'
 import { CallerCard } from '@/components/caller-card'
 import { CopyPanel } from '@/components/copy-panel'
 import { cx, SideTag, TokenIcon, VerifiedBadge } from '@/components/ui'
-import { callById, callerByHandle, calls, NOW, statusLabel } from '@/lib/data'
+import { getCall, getCaller, getCandles, statusLabel } from '@/lib/data'
 import { ago, pct, price, timeLeft } from '@/lib/format'
 import { moveVsEntry } from '@/lib/money'
 
-export function generateStaticParams() {
-  return calls.map((c) => ({ id: c.id }))
-}
-
 export default async function CallPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const call = callById(id)
+  const call = await getCall(id)
   if (!call) notFound()
-  const caller = callerByHandle(call.caller)
+  const [caller, candles] = await Promise.all([
+    getCaller(call.caller),
+    getCandles(call.assetAddress ?? ''),
+  ])
+  const now = new Date()
   const move = moveVsEntry(call)
-  const open = ['posted', 'armed', 'live'].includes(call.status)
+  const open = ['pending', 'armed', 'live'].includes(call.status)
   const strip = [
     { k: 'Price', v: price(call.price), live: true },
     { k: 'Entry', v: price(call.entry) },
@@ -27,7 +27,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
     { k: 'Stop', v: price(call.stop), tone: 'text-bad' },
     {
       k: open ? 'Ends in' : 'Status',
-      v: open ? timeLeft(call.expiresAt, NOW) : statusLabel[call.status].label,
+      v: open ? timeLeft(call.expiresAt, now) : statusLabel[call.status].label,
     },
   ]
   return (
@@ -41,7 +41,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
                 {call.asset}
                 <span className="text-muted">/USDC</span>
               </span>
-              <SideTag long={call.long} />
+              <SideTag long={call.direction === 'long'} />
               {call.supercall && (
                 <span className="btn-cta px-1.5 py-px text-[12px]">
                   <i className="font-semibold">Super</i>call
@@ -53,7 +53,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
                 @{call.caller}
               </Link>
               {caller?.verified && <VerifiedBadge size={13} />} · SF {caller?.superFactor ?? 50} ·{' '}
-              {ago(call.createdAt, NOW)}
+              {ago(call.createdAt, now)}
             </span>
           </div>
         </div>
@@ -97,7 +97,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
                 since entry
               </span>
             </div>
-            <CallChart call={call} />
+            <CallChart call={call} candles={candles} />
           </section>
           <CallDetails call={call} />
         </div>

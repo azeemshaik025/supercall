@@ -1,14 +1,13 @@
 import Link from 'next/link'
-import { NOW } from '@/lib/data'
 import { pct, price, timeLeft, usdShort } from '@/lib/format'
 import { moveVsEntry } from '@/lib/money'
 import type { Call, Caller } from '@/lib/types'
 import { StatusBar } from './status-bar'
 import { cx, SideTag, TokenIcon, VerifiedBadge } from './ui'
 
-/** Header, price vs entry, status bar, levels, caller. */
 export function CallCard({ call, caller }: { call: Call; caller?: Caller }) {
   const move = moveVsEntry(call)
+  const now = new Date()
   return (
     <Link href={`/c/${call.id}`} className="surface-card flex flex-col hover:border-line-strong">
       <div className="flex items-center gap-2.5 border-b border-line px-4 py-3.5">
@@ -17,9 +16,9 @@ export function CallCard({ call, caller }: { call: Call; caller?: Caller }) {
           {call.asset}
           <span className="font-normal text-muted">/USDC</span>
         </span>
-        <SideTag long={call.long} />
+        <SideTag long={call.direction === 'long'} />
         <span className="ml-auto text-[12px] whitespace-nowrap text-muted">
-          {timeLeft(call.expiresAt, NOW)} left
+          {timeLeft(call.expiresAt, now)} left
         </span>
       </div>
       <div className="flex items-end justify-between gap-3 px-4 pt-4 pb-3.5">
@@ -56,10 +55,6 @@ export function CallCard({ call, caller }: { call: Call; caller?: Caller }) {
         <span className="ml-auto text-muted">
           SF <span className="text-ink">{caller?.superFactor ?? 50}</span>
         </span>
-        <span aria-hidden="true" className="text-faint">
-          |
-        </span>
-        <span className="text-muted">{usdShort(call.copiedUsd)} copied</span>
       </div>
     </Link>
   )

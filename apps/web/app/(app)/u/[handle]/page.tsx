@@ -1,16 +1,11 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { CallCard } from '@/components/call-card'
 import { LastTen } from '@/components/caller-card'
 import { FollowButton } from '@/components/follow-button'
 import { VerifiedBadge } from '@/components/ui'
-import { callerByHandle, callers, callsBy, me } from '@/lib/data'
+import { getCaller, getCallerCalls } from '@/lib/data'
 import { shortDate, usdShort } from '@/lib/format'
 import { callerCut } from '@/lib/money'
-
-export function generateStaticParams() {
-  return callers.map((c) => ({ handle: c.handle }))
-}
 
 const events = [
   ['New caller', 'starts at 50'],
@@ -23,11 +18,9 @@ const events = [
 
 export default async function CallerPage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params
-  const caller = callerByHandle(handle)
+  const [caller, list] = await Promise.all([getCaller(handle), getCallerCalls(handle)])
   if (!caller) notFound()
-  const list = callsBy(handle)
   const wins = caller.lastTen.filter((o) => o === 'W').length
-  const mine = handle === me.handle
   const stats = [
     { k: 'Calls', v: String(caller.callCount) },
     { k: 'Last 10', v: `${wins}/${caller.lastTen.length}` },
@@ -38,7 +31,7 @@ export default async function CallerPage({ params }: { params: Promise<{ handle:
       sub: `${caller.followersProfitablePct}% in profit`,
       tone: caller.followersNetUsd >= 0 ? 'text-good' : 'text-bad',
     },
-    { k: 'Fund', v: usdShort(caller.fundUsd), sub: 'credit if a call goes wrong' },
+    { k: 'Fund', v: usdShort(caller.poolUsd), sub: 'credit if a call goes wrong' },
   ]
   return (
     <div className="space-y-6">
@@ -46,11 +39,11 @@ export default async function CallerPage({ params }: { params: Promise<{ handle:
         <section className="surface-card flex min-w-0 flex-[999_1_460px] flex-col gap-[18px] p-6">
           <div className="flex items-start gap-4">
             <span className="grid size-16 shrink-0 place-items-center bg-surface-3 text-[24px] text-silver">
-              {caller.name[0]}
+              {caller.displayName[0]}
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <h1 className="flex items-center gap-2 text-[32px] leading-tight font-medium tracking-[-0.03em]">
-                {caller.name} {caller.verified && <VerifiedBadge size={20} />}
+                {caller.displayName} {caller.verified && <VerifiedBadge size={20} />}
               </h1>
               <span className="text-[13px] text-muted">
                 @{caller.handle} ·{' '}
@@ -62,16 +55,7 @@ export default async function CallerPage({ params }: { params: Promise<{ handle:
                 Calling since {shortDate(caller.joinedAt)}
               </span>
             </div>
-            {mine ? (
-              <Link
-                href="/profile"
-                className="flex h-[38px] items-center border border-line-strong px-4 text-[13px]"
-              >
-                Edit profile
-              </Link>
-            ) : (
-              <FollowButton initial={handle === '0xmeera'} />
-            )}
+            <FollowButton initial={false} />
           </div>
           <div className="flex flex-col gap-2">
             <span className="text-[12px] text-muted">Last 10 calls · newest on the right</span>
@@ -127,10 +111,10 @@ export default async function CallerPage({ params }: { params: Promise<{ handle:
         <div className="flex min-w-80 flex-1 flex-col gap-2.5">
           <h2 className="text-[15px] font-medium">How SuperFactor works</h2>
           <p className="text-[13px] leading-relaxed text-muted">
-            A public formula over this caller’s records on Arkiv, so anyone can recompute it.
-            SuperFactor = 50 + 50 × S ÷ (W + 10), kept between 0 and 100. S sums call scores, W
-            counts calls, and older calls count a little less. It sets the caller’s cut of kept
-            fees.
+            A public formula over this caller&apos;s records on Arkiv, so anyone can recompute it.
+            SuperFactor = 50 + 50 &times; S &divide; (W + 10), kept between 0 and 100. S sums call
+            scores, W counts calls, and older calls count a little less. It sets the caller&apos;s
+            cut of kept fees.
           </p>
         </div>
         <dl className="flex min-w-72 flex-1 flex-col">
