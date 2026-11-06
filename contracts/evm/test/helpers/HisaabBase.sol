@@ -138,7 +138,12 @@ abstract contract HisaabBase is Test {
 
     // ---------------------------------------------------------------- settlement helpers
     function _res(bool filled, uint256 kept, uint256 ask) internal pure returns (Hisaab.Result memory) {
-        return Hisaab.Result(filled, kept, ask);
+        return Hisaab.Result(filled, kept, ask, _inputs(filled, kept, ask));
+    }
+
+    /// @dev Any non-zero commitment; the contract only stores and emits it.
+    function _inputs(bool filled, uint256 kept, uint256 ask) internal pure returns (bytes32) {
+        return keccak256(abi.encode("inputs", filled, kept, ask));
     }
 
     function _arr1(bool filled, uint256 kept, uint256 ask) internal pure returns (Hisaab.Result[] memory rs) {

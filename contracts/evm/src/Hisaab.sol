@@ -68,6 +68,10 @@ contract Hisaab is Ownable2Step, Pausable, ReentrancyGuard {
         bool filled;
         uint256 keptFee;
         uint256 creditAsk;
+        /// @dev Hash of the off-chain inputs behind this result (fill price, fill tx, times,
+        /// weights). Its preimage is published off-chain so anyone can recompute the result.
+        /// Required for Right, AboveEntry and Wrong; may be zero for Refund.
+        bytes32 inputs;
     }
 
     struct Payout {
@@ -121,6 +125,9 @@ contract Hisaab is Ownable2Step, Pausable, ReentrancyGuard {
     event SettlementStarted(bytes32 indexed call);
     /// @dev The interval [from, to) contains the copies settled by this batch.
     event BatchSettled(bytes32 indexed call, uint256 from, uint256 to, Ending ending);
+    /// @dev The settler's commitment to the inputs behind one copy's result, posted in the
+    /// same transaction that pays it, so the inputs cannot be changed after the payout.
+    event CopyInputs(bytes32 indexed call, uint256 indexed index, bytes32 inputs);
     event CopySettled(
         bytes32 indexed call, uint256 indexed index, address indexed follower,
         uint256 cashBack, uint256 creditBack, uint256 newCredit
@@ -275,7 +282,10 @@ contract Hisaab is Ownable2Step, Pausable, ReentrancyGuard {
         uint256 walletCash;
         uint256 treasuryCash;
         for (uint256 i; i < count; ++i) {
+            bytes32 inputs = results[i].inputs;
+            if (inputs == bytes32(0) && ending != Ending.Refund) revert InvalidResult(callId, from + i);
             payouts[i] = _settleCopy(callId, info, from + i, ending, results[i]);
+            emit CopyInputs(callId, from + i, inputs);
             walletCash += payouts[i].walletCash;
             treasuryCash += payouts[i].treasuryCash;
         }

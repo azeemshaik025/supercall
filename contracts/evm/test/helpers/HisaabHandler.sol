@@ -222,14 +222,14 @@ contract HisaabHandler is Test {
             uint256 r = uint256(keccak256(abi.encode(seed, k)));
             if (ending == Hisaab.Ending.Right || ending == Hisaab.Ending.AboveEntry) {
                 bool filled = r % 4 != 0;
-                rs[k] = Hisaab.Result(filled, filled ? (r >> 8) % (callFee + 1) : 0, 0);
+                rs[k] = Hisaab.Result(filled, filled ? (r >> 8) % (callFee + 1) : 0, 0, bytes32(r | 1));
             } else if (ending == Hisaab.Ending.Wrong) {
                 uint256 maxAsk = (cp.size * 3000) / 10_000 - callFee;
                 uint256 ask = (r >> 8) % (maxAsk + 1);
-                rs[k] = Hisaab.Result(true, 0, ask);
+                rs[k] = Hisaab.Result(true, 0, ask, bytes32(r | 1));
                 total += ask;
             } else {
-                rs[k] = Hisaab.Result(r % 2 == 0, 0, 0);
+                rs[k] = Hisaab.Result(r % 2 == 0, 0, 0, r % 3 == 0 ? bytes32(0) : bytes32(r | 1));
             }
         }
     }
