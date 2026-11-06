@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "wxt",
+    "dev:live": "NEXT_PUBLIC_API_URL=https://supercall-api.unitlabs.xyz WEB_ORIGIN=https://supercall.unitlabs.xyz wxt",
     "build": "wxt build",
+    "zip:live": "NEXT_PUBLIC_API_URL=https://supercall-api.unitlabs.xyz WEB_ORIGIN=https://supercall.unitlabs.xyz wxt zip",
     "typecheck": "wxt prepare && tsc",
     "test": "vitest run"
   },
