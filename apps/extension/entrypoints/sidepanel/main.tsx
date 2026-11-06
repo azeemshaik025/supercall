@@ -1,7 +1,7 @@
 // The side panel: sign in with Privy, see the wallet, and copy the call a card's Copy picked.
-import { PrivyProvider, usePrivy, useWallets } from '@privy-io/react-auth'
+import { PrivyProvider, useCreateWallet, usePrivy, useWallets } from '@privy-io/react-auth'
 import { CHAIN } from '@supercall/chains'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createPublicClient, erc20Abi, http } from 'viem'
 import { browser } from 'wxt/browser'
@@ -66,11 +66,29 @@ function useCall(pending: Pending | undefined) {
   return call
 }
 
+/**
+ * The signed-in user's wallet. Their embedded one is made at sign-in, but the sign-in window can
+ * close before Privy finishes it: if they have none once Privy's wallets load, make it here.
+ */
+function useWallet() {
+  const { user } = usePrivy()
+  const { wallets, ready } = useWallets()
+  const { createWallet } = useCreateWallet()
+  const asked = useRef(false)
+  const wallet = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0]
+  const address = wallet?.address ?? user?.wallet?.address
+  useEffect(() => {
+    if (!ready || address || asked.current) return
+    asked.current = true
+    createWallet().catch((error: unknown) => console.warn('Supercall wallet not created', error))
+  }, [ready, address, createWallet])
+  return { address, creating: ready && !address }
+}
+
 function Account() {
   const { user, logout } = usePrivy()
-  const { wallets } = useWallets()
-  const wallet = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0]
-  const balance = useUsdc(wallet?.address)
+  const { address, creating } = useWallet()
+  const balance = useUsdc(address)
   const name = user?.twitter?.username ? `@${user.twitter.username}` : (user?.email?.address ?? '')
   return (
     <section className="sc-box">
@@ -80,14 +98,21 @@ function Account() {
           Sign out
         </button>
       </div>
-      <div className="sc-row">
-        <strong>{name || 'Wallet'}</strong>
-        <span className="sc-mono sc-muted">{wallet ? short(wallet.address) : 'No wallet yet'}</span>
-      </div>
-      <div className="sc-row">
-        <span className="sc-muted">USDC on Arc</span>
-        <span className="sc-mono">{balance === undefined ? '…' : usd(balance)}</span>
-      </div>
+      <strong className="sc-clip" title={name}>
+        {name || 'Wallet'}
+      </strong>
+      <dl className="sc-facts">
+        <div>
+          <dt>Wallet</dt>
+          <dd className="sc-mono" title={address}>
+            {address ? short(address) : creating ? 'Creating…' : 'Loading…'}
+          </dd>
+        </div>
+        <div>
+          <dt>USDC on Arc</dt>
+          <dd className="sc-mono">{!address ? '–' : balance === undefined ? '…' : usd(balance)}</dd>
+        </div>
+      </dl>
     </section>
   )
 }
@@ -209,7 +234,7 @@ function Panel() {
           <p className="sc-hint">Tap Copy under a call on X to copy it here.</p>
         )}
       </div>
-      <div className="sc-dither" aria-hidden="true" />
+      <div className={authenticated ? 'sc-dither sc-quiet' : 'sc-dither'} aria-hidden="true" />
     </main>
   )
 }
