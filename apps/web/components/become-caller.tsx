@@ -13,9 +13,20 @@ const STEPS = [
   ['record', 'Sign your caller record'],
 ] as const
 
+/** With its own caller status: the popup and anywhere that doesn't read one already. */
 export function BecomeCaller({ onDone }: { onDone?: () => void }) {
+  return <BecomeCallerSteps setup={useCallerSetup()} onDone={onDone} />
+}
+
+/** The steps, on a caller status the page already reads: one check, not two. */
+export function BecomeCallerSteps({
+  setup,
+  onDone,
+}: {
+  setup: ReturnType<typeof useCallerSetup>
+  onDone?: () => void
+}) {
   const { login, user } = usePrivy()
-  const setup = useCallerSetup()
   const { step, me, caller, error } = setup
   const [name, setName] = useState(usernameFromX(user?.twitter?.username) ?? '')
   const [busy, setBusy] = useState(false)

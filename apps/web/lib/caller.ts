@@ -34,6 +34,22 @@ export const usernameFromX = (handle: string | null | undefined) => {
 }
 
 /** Where the signed-in user is on the way to publishing, and the actions for each step. */
+/** The Privy user last seen as a caller in this tab session: they skip straight to publishing. */
+const KNOWN = 'supercall:caller'
+const knownCaller = () => {
+  try {
+    return sessionStorage.getItem(KNOWN)
+  } catch {
+    return null
+  }
+}
+const rememberCaller = (userId: string | null) => {
+  try {
+    if (userId) sessionStorage.setItem(KNOWN, userId)
+    else sessionStorage.removeItem(KNOWN)
+  } catch {}
+}
+
 export function useCallerSetup() {
   const { ready, authenticated, user, getAccessToken } = usePrivy()
   const { wallets } = useWallets()
@@ -42,6 +58,11 @@ export function useCallerSetup() {
   const [me, setMe] = useState<Me>()
   const [caller, setCaller] = useState<MyCaller>()
   const [step, setStep] = useState<CallerStep>('loading')
+  // Seen as a caller earlier in this session: show publishing at once, then check quietly.
+  useEffect(() => {
+    if (ready && user?.id && knownCaller() === user.id)
+      setStep((s) => (s === 'loading' ? 'done' : s))
+  }, [ready, user?.id])
   const [error, setError] = useState<string>()
 
   const load = useCallback(async () => {
@@ -68,6 +89,7 @@ export function useCallerSetup() {
       const c = await api<MyCaller>('/me/caller', { token })
       setCaller(c)
       setStep(c.key ? 'done' : 'record')
+      rememberCaller(c.key ? (user?.id ?? null) : null)
     } catch (e) {
       // Shown with a retry, never left on "checking": usually the API is down or the session ended.
       const reason = e instanceof Error ? e.message : String(e)
@@ -78,7 +100,7 @@ export function useCallerSetup() {
       )
       setStep('error')
     }
-  }, [ready, authenticated, user?.twitter?.username, getAccessToken, shared.reload])
+  }, [ready, authenticated, user?.id, user?.twitter?.username, getAccessToken, shared.reload])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: shared.version is the signal to read again
   useEffect(() => {
