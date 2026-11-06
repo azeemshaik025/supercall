@@ -11,6 +11,7 @@ import type { Call } from '../../lib/lookup'
 import { type Pending, pendingKey, readPending } from '../../lib/pending'
 import { arc, privyAppId, privyConfig } from '../../lib/privy'
 import type { Message } from '../background'
+import { CallerCard } from './caller'
 
 declare const __API_URL__: string
 declare const __WEB_ORIGIN__: string
@@ -322,7 +323,10 @@ function Panel() {
         {!ready ? (
           <p className="sc-muted">Loading…</p>
         ) : authenticated ? (
-          <Account tick={tick} />
+          <>
+            <Account tick={tick} />
+            <CallerCard />
+          </>
         ) : (
           <>
             <div className="sc-hero">
