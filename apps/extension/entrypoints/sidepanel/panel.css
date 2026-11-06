@@ -1,0 +1,124 @@
+/* The side panel and sign-in window: the app's dark palette (apps/web/app/globals.css). */
+:root {
+  --night: #04090e;
+  --surface: #0b131b;
+  --surface-2: #111b25;
+  --edge: #1b2733;
+  --ink: #eff1f4;
+  --muted: #8799a8;
+  --good: #3ecf8e;
+  --bad: #ff4566;
+  --blue: #1b55c9;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+body {
+  background: var(--night);
+  color: var(--ink);
+  font:
+    14px / 1.45 Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+.sc-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  min-height: 100vh;
+}
+.sc-center {
+  align-items: center;
+  justify-content: center;
+}
+.sc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.sc-head img {
+  width: 22px;
+  height: 22px;
+}
+.sc-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--edge);
+}
+.sc-label {
+  font:
+    11px / 1.4 "Geist Mono",
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sc-muted {
+  color: var(--muted);
+}
+.sc-mono {
+  font-family: "Geist Mono", ui-monospace, monospace;
+}
+.sc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.sc-levels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.sc-levels div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--surface-2);
+}
+.sc-good {
+  color: var(--good);
+}
+.sc-bad {
+  color: var(--bad);
+}
+.sc-input {
+  width: 100%;
+  padding: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--edge);
+  color: var(--ink);
+  font: inherit;
+}
+.sc-button {
+  padding: 11px 14px;
+  border: 0;
+  background: var(--blue);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sc-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.sc-link {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
