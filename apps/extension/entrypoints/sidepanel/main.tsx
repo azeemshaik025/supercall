@@ -1,28 +1,32 @@
-// The side panel: sign in with Privy, see the wallet, and copy the call a card's Copy picked.
-import { PrivyProvider, useCreateWallet, usePrivy, useWallets } from '@privy-io/react-auth'
-import { CHAIN } from '@supercall/chains'
-import { useEffect, useRef, useState } from 'react'
+// The side panel: your Supercall account, wallet and caller status, and the copy sheet for the
+// call a card's Copy picked. It uses the Supercall site's sign-in (lib/session.ts): there is no
+// second login. Anything your wallet signs opens a small Supercall window, where the session is.
+import { CHAIN, viemChain } from '@supercall/chains'
+import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderSVG } from 'uqr'
 import { createPublicClient, erc20Abi, http } from 'viem'
 import { browser } from 'wxt/browser'
+import { api } from '../../lib/api'
 import { feeOf, fromMicro, toMicro } from '../../lib/fee'
 import type { Call } from '../../lib/lookup'
 import { type Pending, pendingKey, readPending } from '../../lib/pending'
-import { arc, privyAppId, privyConfig } from '../../lib/privy'
+import { expiresAt, SESSION_KEY } from '../../lib/session'
 import type { Message } from '../background'
-import { CallerCard } from './caller'
 
 declare const __API_URL__: string
 declare const __WEB_ORIGIN__: string
 
 // The app's chain (CHAIN): where Hisaab holds fees and Flash trades.
-const client = createPublicClient({ chain: arc, transport: http() })
-/** How often balances are read again while the panel is open. */
+const client = createPublicClient({ chain: viemChain(), transport: http() })
+/** How often balances and the account are read again while the panel is open. */
 const REFRESH_MS = 15_000
 const usd = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
+/** Opens a page of the Supercall site in a wallet-sized window. */
+const openSite = (path: string) =>
+  browser.runtime.sendMessage({ type: 'open', path } satisfies Message)
 
 /** The wallet's USDC on the app's chain, read again on `tick` and every 15 seconds. */
 function useUsdc(wallet: string | undefined, tick: number) {
@@ -84,23 +88,69 @@ function useCall(pending: Pending | undefined) {
   return call
 }
 
-/**
- * The signed-in user's wallet. Their embedded one is made at sign-in, but the sign-in window can
- * close before Privy finishes it: if they have none once Privy's wallets load, make it here.
- */
-function useWallet() {
-  const { user } = usePrivy()
-  const { wallets, ready } = useWallets()
-  const { createWallet } = useCreateWallet()
-  const asked = useRef(false)
-  const wallet = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0]
-  const address = wallet?.address ?? user?.wallet?.address
+/** The site's sign-in, as its script last handed it over; undefined until read. */
+function useSession() {
+  const [token, setToken] = useState<string | null>()
   useEffect(() => {
-    if (!ready || address || asked.current) return
-    asked.current = true
-    createWallet().catch((error: unknown) => console.warn('Supercall wallet not created', error))
-  }, [ready, address, createWallet])
-  return { address, creating: ready && !address }
+    const read = () =>
+      browser.storage.session
+        .get([SESSION_KEY])
+        .then((s) => setToken((s[SESSION_KEY] as string | null | undefined) ?? null))
+    void read()
+    const changed = (changes: Record<string, { newValue?: unknown }>) => {
+      if (SESSION_KEY in changes)
+        setToken((changes[SESSION_KEY]?.newValue as string | null) ?? null)
+    }
+    browser.storage.session.onChanged.addListener(changed)
+    // A token that runs out while the site is closed counts as signed out.
+    const timer = setInterval(read, 30_000)
+    return () => {
+      browser.storage.session.onChanged.removeListener(changed)
+      clearInterval(timer)
+    }
+  }, [])
+  const live = token && expiresAt(token) > Date.now() / 1000 ? token : null
+  return { token: live, ready: token !== undefined, expired: Boolean(token) && !live }
+}
+
+type Me = {
+  profile: { username: string; wallet: string; worldVerified: boolean } | null
+  account: { wallets: string[]; email: string | null; x: { username: string } | null }
+  worldVerified: boolean
+}
+type MyCaller = { key: string | null; caller: { handle: string; superFactor: number } | null }
+
+/** The account behind the session, and its caller record once it has one. */
+function useAccount(token: string | null, tick: number) {
+  const [me, setMe] = useState<Me | null>()
+  const [caller, setCaller] = useState<MyCaller | null>()
+  const [error, setError] = useState<string>()
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tick is the reload button asking to read again
+  useEffect(() => {
+    if (!token) return setMe(null)
+    let live = true
+    const read = async () => {
+      try {
+        const m = await api<Me>('/me', { token })
+        const c = m.profile?.worldVerified
+          ? await api<MyCaller>('/me/caller', { token }).catch(() => null)
+          : null
+        if (!live) return
+        setMe(m)
+        setCaller(c)
+        setError(undefined)
+      } catch (e) {
+        if (live) setError(e instanceof Error ? e.message : String(e))
+      }
+    }
+    void read()
+    const timer = setInterval(read, REFRESH_MS)
+    return () => {
+      live = false
+      clearInterval(timer)
+    }
+  }, [token, tick])
+  return { me, caller, error }
 }
 
 const CopyIcon = () => (
@@ -161,31 +211,28 @@ function AddFunds({ address }: { address: string }) {
   )
 }
 
-function Account({ tick }: { tick: number }) {
-  const { user, logout } = usePrivy()
-  const { address, creating } = useWallet()
+function Account({ me, tick }: { me: Me; tick: number }) {
+  const address = me.profile?.wallet ?? me.account.wallets[0]
   const balance = useUsdc(address, tick)
-  const shown = (b: number | null | undefined) =>
-    !address ? '–' : b === undefined ? '…' : b === null ? 'Unavailable' : usd(b)
   const [showFunds, setShowFunds] = useState(false)
-  const name = user?.twitter?.username ? `@${user.twitter.username}` : (user?.email?.address ?? '')
+  const name = me.account.x ? `@${me.account.x.username}` : (me.account.email ?? 'Signed in')
   return (
     <section className="sc-box">
       <div className="sc-row">
-        <span className="sc-label">Signed in</span>
-        <button type="button" className="sc-link" onClick={() => logout()}>
-          Sign out
+        <span className="sc-label">Signed in on Supercall</span>
+        <button type="button" className="sc-link" onClick={() => openSite('/profile')}>
+          Manage
         </button>
       </div>
       <strong className="sc-clip" title={name}>
-        {name || 'Wallet'}
+        {name}
       </strong>
       <dl className="sc-facts">
         <div>
           <dt>Wallet</dt>
           <dd className="sc-wallet">
             <span className="sc-mono" title={address}>
-              {address ? short(address) : creating ? 'Creating…' : 'Loading…'}
+              {address ? short(address) : 'Finishing on Supercall…'}
             </span>
             {address && (
               <>
@@ -206,10 +253,55 @@ function Account({ tick }: { tick: number }) {
         </div>
         <div>
           <dt>USDC</dt>
-          <dd className="sc-mono">{shown(balance)}</dd>
+          <dd className="sc-mono">
+            {!address
+              ? '–'
+              : balance === undefined
+                ? '…'
+                : balance === null
+                  ? 'Unavailable'
+                  : usd(balance)}
+          </dd>
         </div>
       </dl>
       {address && showFunds && <AddFunds address={address} />}
+    </section>
+  )
+}
+
+/** Whether posts on X count as calls yet: a caller record, or the way to one. */
+function Caller({ me, caller }: { me: Me; caller: MyCaller | null | undefined }) {
+  if (caller?.key && caller.caller)
+    return (
+      <section className="sc-box">
+        <div className="sc-row">
+          <span className="sc-label">Caller</span>
+          <span className="sc-good sc-small">Verified human</span>
+        </div>
+        <div className="sc-row">
+          <strong className="sc-clip">@{caller.caller.handle}</strong>
+          <span className="sc-mono">SF {Math.round(caller.caller.superFactor)}</span>
+        </div>
+        <p className="sc-muted sc-small">Post a call on X and it shows up under your post.</p>
+      </section>
+    )
+  const next = !me.profile
+    ? 'Pick a username'
+    : !me.profile.worldVerified
+      ? 'Verify with World ID'
+      : 'Sign your caller record'
+  return (
+    <section className="sc-box">
+      <div className="sc-row">
+        <span className="sc-label">Become a caller</span>
+      </div>
+      <p className="sc-muted sc-small">
+        Copying is open to everyone. To make calls from X, verify once with World ID. Next:{' '}
+        {next.toLowerCase()}.
+      </p>
+      <button type="button" className="sc-button" onClick={() => openSite('/verify')}>
+        {next}
+      </button>
     </section>
   )
 }
@@ -268,30 +360,31 @@ function Copy({ id, call }: { id: string; call: Call | null | undefined }) {
         <span className="sc-muted">Copy fee, 0.7%, held in Hisaab</span>
         <span className="sc-mono">{fee ? usd(fromMicro(fee.total)) : '–'}</span>
       </div>
-      <button type="button" className="sc-button" disabled>
-        Pay fee and copy
+      <button
+        type="button"
+        className="sc-button"
+        onClick={() =>
+          browser.runtime.sendMessage({
+            type: 'open',
+            path: `/m/${encodeURIComponent(id)}`,
+          } satisfies Message)
+        }
+      >
+        Copy on Supercall
       </button>
-      <p className="sc-muted">
-        Paying turns on once the API takes copies. Until then, the fee shown is exactly what Hisaab
-        would take.
+      <p className="sc-muted sc-small">
+        Opens a Supercall window to sign the fee and the order with your wallet.
       </p>
     </section>
   )
 }
 
 function Panel() {
-  const { ready, authenticated } = usePrivy()
+  const session = useSession()
   const [tick, setTick] = useState(0)
+  const { me, caller, error } = useAccount(session.token, tick)
   const pending = usePending()
   const call = useCall(pending)
-  useEffect(() => {
-    // The sign-in window says when it's done; Privy's session is shared, so a reload picks it up.
-    const heard = (message: Message) => {
-      if (message.type === 'signed-in') location.reload()
-    }
-    browser.runtime.onMessage.addListener(heard)
-    return () => browser.runtime.onMessage.removeListener(heard)
-  }, [])
   return (
     <main className="sc-shell">
       <header className="sc-head">
@@ -304,8 +397,8 @@ function Panel() {
           <button
             type="button"
             className="sc-icon"
-            title="Reload balances"
-            aria-label="Reload balances"
+            title="Reload"
+            aria-label="Reload"
             onClick={() => setTick((t) => t + 1)}
           >
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
@@ -320,12 +413,12 @@ function Panel() {
         </span>
       </header>
       <div className="sc-body">
-        {!ready ? (
+        {!session.ready || (session.token && me === undefined && !error) ? (
           <p className="sc-muted">Loading…</p>
-        ) : authenticated ? (
+        ) : session.token && me ? (
           <>
-            <Account tick={tick} />
-            <CallerCard />
+            <Account me={me} tick={tick} />
+            <Caller me={me} caller={caller} />
           </>
         ) : (
           <>
@@ -335,33 +428,29 @@ function Panel() {
                 <br />
                 <span>Super hard to fake.</span>
               </h1>
-              <p className="sc-muted">Same account and wallet as the Supercall site.</p>
+              <p className="sc-muted">
+                {session.expired
+                  ? 'Your Supercall session ended. Open Supercall to pick it up again.'
+                  : 'Uses your Supercall sign-in. Sign in once, on the site or here.'}
+              </p>
             </div>
-            <button
-              type="button"
-              className="sc-button"
-              onClick={() => browser.runtime.sendMessage({ type: 'sign-in' } satisfies Message)}
-            >
-              Sign in
+            <button type="button" className="sc-button" onClick={() => openSite('/connect')}>
+              {session.expired ? 'Open Supercall' : 'Sign in'}
             </button>
             <p className="sc-methods">X · Email · Wallet</p>
           </>
         )}
+        {error && <p className="sc-bad sc-small">Couldn’t read your account: {error}</p>}
         {pending ? (
           <Copy id={pending.id} call={call} />
         ) : (
           <p className="sc-hint">Tap Copy under a call on X to copy it here.</p>
         )}
       </div>
-      <div className={authenticated ? 'sc-dither sc-quiet' : 'sc-dither'} aria-hidden="true" />
+      <div className={me ? 'sc-dither sc-quiet' : 'sc-dither'} aria-hidden="true" />
     </main>
   )
 }
 
 const root = document.getElementById('root')
-if (root)
-  createRoot(root).render(
-    <PrivyProvider appId={privyAppId} config={privyConfig}>
-      <Panel />
-    </PrivyProvider>,
-  )
+if (root) createRoot(root).render(<Panel />)
