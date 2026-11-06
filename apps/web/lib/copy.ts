@@ -149,11 +149,18 @@ function useSigner() {
 type Signer = Awaited<ReturnType<ReturnType<typeof useSigner>>>
 
 /** Approvals first, then every signature a quote asks for. */
-async function signQuote(s: Signer, q: Quote, onStep: (st: CopyStep) => void, extraApprovals: Tx[] = []) {
+async function signQuote(
+  s: Signer,
+  q: Quote,
+  onStep: (st: CopyStep) => void,
+  extraApprovals: Tx[] = [],
+) {
   const order = q.evm
   if (!order?.orderTypedData) throw new Error('Flash sent nothing to sign')
   const exits = q.attachedBracket?.evm ?? null
-  const approvals = [order.approveTx, exits?.approveTx, ...extraApprovals].filter((t): t is Tx => !!t)
+  const approvals = [order.approveTx, exits?.approveTx, ...extraApprovals].filter(
+    (t): t is Tx => !!t,
+  )
   if (approvals.length) onStep('approve')
   for (const tx of approvals) await s.send(tx)
   onStep('sign')
@@ -266,7 +273,13 @@ export type WalletCopy = {
   status: string | null
   cancel: { message: string } | null
   closed: { orderId: string; status: string | null; gotUsd: number; at: string | null } | null
-  fill: { coin: number; spentUsd: number; price: number; at: string | null } | null
+  fill: {
+    coin: number
+    spentUsd: number
+    price: number
+    at: string | null
+    tx?: string | null
+  } | null
 }
 
 /**
