@@ -14,8 +14,11 @@ async function main() {
 
   const runLoop = async () => {
     for (;;) {
+      const t0 = Date.now()
+      console.log(JSON.stringify({ event: 'round:enter' }))
       try {
-        await loop.round()
+        const result = await loop.round()
+        console.log(JSON.stringify({ event: 'round:done', ms: Date.now() - t0, skipped: result === undefined }))
       } catch (e) {
         console.error('round', (e as Error).message)
       }
@@ -25,8 +28,11 @@ async function main() {
 
   const runWatch = async () => {
     for (;;) {
+      const t0 = Date.now()
+      console.log(JSON.stringify({ event: 'tick:enter' }))
       try {
-        await watch.tick()
+        const result = await watch.tick()
+        console.log(JSON.stringify({ event: 'tick:done', ms: Date.now() - t0, skipped: result === undefined }))
       } catch (e) {
         console.error('tick', (e as Error).message)
       }

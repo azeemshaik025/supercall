@@ -15,9 +15,12 @@ export function createLoop(
   let lastExtend = 0
 
   async function round() {
+    log({ event: 'round:lock-acquired' })
     const arc = w.settler.reader
     const from = BigInt(w.chain.hisaabBlock ?? 0)
+    log({ event: 'round:rpc', step: 'getBlockNumber' })
     const to = await arc.getBlockNumber()
+    log({ event: 'round:rpc', step: 'registeredCalls', from: Number(from), to: Number(to), pages: Math.ceil(Number(to - from) / 10000) })
     const calls = await registeredCalls(arc, w.chain.hisaab, from, to)
     if (!calls.length) return log({ event: 'round', calls: 0 })
 
