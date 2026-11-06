@@ -26,7 +26,7 @@ export default defineBackground(() => {
   // The toolbar button opens the side panel: sign-in, wallet and copy live there.
   void browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
 
-  browser.runtime.onMessage.addListener((message: Message, sender, reply) => {
+  browser.runtime.onMessage.addListener((message: Message, _sender, reply) => {
     if (message.type === 'theme') {
       void browser.action.setIcon({ path: icons(message.dark ? 'icon-light' : 'icon') })
       return
@@ -55,20 +55,19 @@ export default defineBackground(() => {
       return
     }
     if (message.type === 'copy') {
-      const pending = { id: message.id, call: message.call, at: Date.now() }
-      // Opened first, while the click still counts as the user's: Chrome opens a side panel
-      // only in answer to one. The panel reads the call from storage when it loads.
-      const windowId = sender.tab?.windowId
-      const opened =
-        windowId === undefined
-          ? Promise.reject(new Error('no window'))
-          : browser.sidePanel.open({ windowId })
-      void savePending(browser.storage.session, pending)
-      opened.catch((error) => {
-        // Our site in a wallet-sized window, as before the side panel.
-        console.warn('Supercall side panel did not open; opening the site', error)
-        const url = `${__WEB_ORIGIN__}/m/${encodeURIComponent(message.id)}`
-        browser.windows.create({ url, type: 'popup', width: 400, height: 720 })
+      // Copy goes straight to the copy sheet: the Supercall site in a wallet-sized window, where
+      // the sign-in and wallet are, so the follower signs right there. The call is kept for the
+      // side panel too, which shows the order filling if it's open.
+      void savePending(browser.storage.session, {
+        id: message.id,
+        call: message.call,
+        at: Date.now(),
+      })
+      browser.windows.create({
+        url: `${__WEB_ORIGIN__}/m/${encodeURIComponent(message.id)}`,
+        type: 'popup',
+        width: 420,
+        height: 760,
       })
       return
     }
