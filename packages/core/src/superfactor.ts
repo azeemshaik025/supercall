@@ -1,41 +1,32 @@
-export function callScore(
-  entry: number,
-  stop: number | null,
-  target: number,
-  endingPrice: number | null,
-  ending: 'right' | 'wrong' | 'expired' | 'closed' | 'unfired' | 'void',
-) {
-  const stopDist = stop !== null ? Math.abs(entry - stop) : Math.abs(target - entry)
-  const targetDist = Math.abs(target - entry)
-  const R = targetDist / stopDist
+import type { Ending, Levels, Score } from './types.ts'
 
-  if (ending === 'unfired') return -0.1
-  if (ending === 'void') return -1
+export const SF = {
+  fade: 0.98,
+  prior: 10,
+  cap: 3,
+  unfired: -0.1,
+  void: -1,
+} as const
 
-  if (ending === 'right') return Math.min(R, 3)
-  if (ending === 'wrong') {
-    if (R > 3) return -3 / R
-    return -1
-  }
-
-  if (endingPrice === null) return 0
-  const a = Math.min(1, 3 / R)
-  const b = Math.min(R, 3)
-  const isLong = target > entry
-  const stopVal = stop ?? (isLong ? entry - targetDist : entry + targetDist)
-  const move = isLong
-    ? -a + ((a + b) * (endingPrice - stopVal)) / (target - stopVal)
-    : -a + ((a + b) * (stopVal - endingPrice)) / (stopVal - target)
-  return Math.max(-a, Math.min(b, move))
+export function callScore(call: Levels, ending: Ending): number {
+  if (ending === 'unfired') return SF.unfired
+  if (ending === 'void') return SF.void
+  const sign = call.direction === 'long' ? 1 : -1
+  const reward = sign * (call.target - call.entry)
+  const risk = call.stop === undefined ? reward : sign * (call.entry - call.stop)
+  const r = reward / risk
+  const a = Math.min(1, SF.cap / r)
+  const b = Math.min(r, SF.cap)
+  if (ending === 'won') return b
+  if (ending === 'lost') return -a
+  const fromStop = (sign * (ending.price - call.entry) + risk) / (risk + reward)
+  return -a + (a + b) * Math.min(1, Math.max(0, fromStop))
 }
 
-export function updateSuperFactor(S: number, W: number, score: number) {
-  const newS = 0.98 * S + score
-  const newW = 0.98 * W + 1
-  const sf = 50 + 50 * clamp(newS / (newW + 10), -1, 1)
-  return { S: newS, W: newW, superFactor: sf }
-}
+export const nextScore = (prev: Score, s: number): Score => ({
+  S: SF.fade * prev.S + s,
+  W: SF.fade * prev.W + 1,
+})
 
-function clamp(x: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, x))
-}
+export const superFactor = ({ S, W }: Score) =>
+  50 + 50 * Math.max(-1, Math.min(1, S / (W + SF.prior)))
