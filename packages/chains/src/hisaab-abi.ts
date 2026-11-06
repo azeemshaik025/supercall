@@ -741,6 +741,11 @@ export const hisaabAbi = [
             type: 'uint256',
             internalType: 'uint256',
           },
+          {
+            name: 'inputs',
+            type: 'bytes32',
+            internalType: 'bytes32',
+          },
         ],
       },
     ],
@@ -970,6 +975,31 @@ export const hisaabAbi = [
         type: 'address',
         indexed: false,
         internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'CopyInputs',
+    inputs: [
+      {
+        name: 'call',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
+      },
+      {
+        name: 'index',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'inputs',
+        type: 'bytes32',
+        indexed: false,
+        internalType: 'bytes32',
       },
     ],
     anonymous: false,
