@@ -68,8 +68,7 @@ function orderFor(call: CallRecord, funder: string, qty: bigint): QuoteRequest {
         }
       : {}),
     funderAddress: funder,
-    // Otherwise Flash approves its own contract and the call fee permit has nothing to reuse.
-    evmUsePermit2: true,
+    evmUsePermit2: false,
     // Our platform fee is paid into Hisaab, so Flash takes none: no flashIntegratorFeeBps, which
     // Flash refuses as 0 ("must be a positive decimal").
     attachedBracket: {
@@ -732,7 +731,7 @@ export function walletCopyRoutes(deps: { flash: FlashClient; crowd: Crowd; ident
       qty: coin,
       orderType: 'market',
       funderAddress: wallet,
-      evmUsePermit2: true,
+      evmUsePermit2: false,
     } as QuoteRequest
     return { row, order, bracket }
   }
