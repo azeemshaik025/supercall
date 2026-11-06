@@ -9,7 +9,8 @@
   "scripts": {
     "typecheck": "tsc",
     "test": "node --env-file-if-exists=../../.env ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
-    "seed": "tsx --env-file=../../.env src/seed.ts"
+    "seed": "tsx --env-file=../../.env src/seed.ts",
+    "check": "tsx --env-file=../../.env src/check.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^1.0.0",
