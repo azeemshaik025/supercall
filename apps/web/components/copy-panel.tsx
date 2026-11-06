@@ -3,9 +3,20 @@
 import { usePrivy } from '@privy-io/react-auth'
 import { canMirror, MIN_TARGET_DISTANCE, rewardPct } from '@supercall/core'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { type CSSProperties, useEffect, useState } from 'react'
 import { ApiError } from '@/lib/api'
-import { COPY_STEP, type Copied, type CopyStep, orderState, useCopies, useCopy } from '@/lib/copy'
+import {
+  BACK_STEP,
+  type BackStep,
+  COPY_STEP,
+  type Copied,
+  type CopyStep,
+  orderState,
+  useBack,
+  useCopies,
+  useCopy,
+} from '@/lib/copy'
 import { ENDED, statusLabel } from '@/lib/data'
 import { price, signedUsd, usd } from '@/lib/format'
 import { useLivePrice } from '@/lib/live-price'
@@ -101,17 +112,19 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
   const est = estimate({ ...call, price: now }, size)
   const long = call.direction === 'long'
 
-  // The caller doesn't copy his own call: the API refuses it, so say so up front.
-  if (me?.profile?.username && me.profile.username === call.caller) {
+  // Until the account is read, the panel can't tell a follower from the caller: wait for it,
+  // rather than showing the copy form and then swapping it out.
+  if (!ready || (authenticated && me === undefined)) {
     return (
       <Shell>
-        <Note
-          tag="Your call"
-          tone="muted"
-          text="Followers copy it from here. Share it so they see it: its link previews as the call card on X."
-        />
+        <div className="h-[260px] animate-pulse bg-surface-2" />
       </Shell>
     )
+  }
+  // The caller doesn't copy his own call: he backs it with his own order, which makes it a
+  // supercall.
+  if (me?.profile?.username && me.profile.username === call.caller) {
+    return <GoSuper call={call} wallet={me.profile.wallet} open={open} />
   }
   if (ENDED.includes(call.status)) {
     const st = statusLabel[call.status]
@@ -379,6 +392,106 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
             {orderState(mine[0]?.status, !!mine[0]?.fill).label} · Portfolio
           </Link>
         )}
+      </div>
+    </Shell>
+  )
+}
+
+/**
+ * The caller's side of the panel: back the call with his own order, from the wallet he published
+ * it with. It makes the call a supercall: followers see he's in the trade with them.
+ */
+function GoSuper({ call, wallet, open }: { call: Call; wallet: string; open: boolean }) {
+  const router = useRouter()
+  const back = useBack()
+  const balance = useUsdc(wallet) ?? 0
+  const [typed, setTyped] = useState('100')
+  const [step, setStep] = useState<BackStep | null>(null)
+  const [error, setError] = useState<string>()
+  const [done, setDone] = useState(false)
+  const size = Number(typed.replace(/,/g, '')) || 0
+
+  if (call.supercall || done) {
+    return (
+      <Shell>
+        <Note
+          tag="Supercall"
+          tone="good"
+          text="You’re in the trade with your own order. Followers see it on the call and on X."
+        />
+      </Shell>
+    )
+  }
+  if (!open || ENDED.includes(call.status)) {
+    return (
+      <Shell>
+        <Note
+          tag="Your call"
+          tone="muted"
+          text="Followers copy it from here. Share it so they see it: its link previews as the call card on X."
+        />
+      </Shell>
+    )
+  }
+  const go = async () => {
+    setError(undefined)
+    try {
+      await back(call.id, Math.round(size * 100) / 100, wallet, setStep)
+      setDone(true)
+      router.refresh()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setError(/reject|denied|cancel/i.test(msg) ? 'Cancelled in your wallet' : msg)
+    } finally {
+      setStep(null)
+    }
+  }
+  return (
+    <Shell>
+      <div className="flex flex-col gap-[18px]">
+        <div className="flex flex-col gap-2">
+          <span className="self-start bg-surface-2 px-2 py-0.5 text-[12px] text-muted">
+            Your call
+          </span>
+          <p className="text-[13px] leading-relaxed text-silver">
+            Go super: back it with your own order, same stop and target, at your size. No fee.
+            Followers see you’re in the trade.
+          </p>
+        </div>
+        <label className="flex flex-col gap-2.5">
+          <span className="flex justify-between text-[12px] text-muted">
+            <span>Your size</span>
+            <span>
+              Avbl <span className="text-ink">{usd(balance).slice(1)}</span> USDC
+            </span>
+          </span>
+          <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              aria-label="Your size in USDC"
+              className="min-w-0 flex-1 bg-transparent text-[18px] font-medium outline-none"
+            />
+            <span className="text-[12px] text-muted">USDC</span>
+          </span>
+        </label>
+        {error && <p className="text-[12px] break-words text-bad">{error}</p>}
+        <button
+          type="button"
+          disabled={step !== null || size < 1 || size > balance}
+          onClick={() => void go()}
+          className="btn-cta h-[46px] cursor-pointer text-[14px] disabled:cursor-default disabled:opacity-60"
+        >
+          {step
+            ? BACK_STEP[step]
+            : size > balance
+              ? 'More than your balance'
+              : size < 1
+                ? 'At least $1'
+                : `Go super with ${usd(size)}`}
+        </button>
       </div>
     </Shell>
   )
