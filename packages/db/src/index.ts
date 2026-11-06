@@ -15,7 +15,7 @@ export function createDb(url = process.env.DATABASE_URL) {
   const client = postgres(url, {
     prepare: !url.includes('-pooler'),
     max,
-    connection: { idle_in_transaction_session_timeout: 120000 },
+    connection: { idle_in_transaction_session_timeout: 600000 },
   })
   const db = drizzle(client, { schema })
   return Object.assign(db, { end: (opts?: { timeout?: number }) => client.end(opts) })
