@@ -283,7 +283,8 @@ export function CandleChart({
   pnl?: Partial<Record<Level, string>>
   marks?: ChartMark[]
   volume?: boolean
-  height: number
+  /** Pixels, or any CSS height such as a calc() against the viewport. */
+  height: number | string
   label: string
   precision?: number
   /** A level waiting to be placed: the next click on the chart puts it at that price. */

@@ -211,7 +211,7 @@ export function Composer({ markets }: { markets: Market[] }) {
             pick={pick}
             onPicked={() => setPick(null)}
             tools
-            height={500}
+            height="max(480px, calc(100dvh - 245px))"
             precision={base < 1 ? 4 : 2}
             label={`${asset} candles with your levels; drag a line to move it`}
           />
