@@ -32,6 +32,7 @@
 .sc-note,
 .sc-badge-pill,
 .sc-pbadge,
+.sc-prow,
 .sc-panel,
 .sc-panel a,
 .sc-card button,
@@ -388,40 +389,50 @@
   text-decoration: underline;
 }
 
-/* Under the follow counts on a caller's profile. */
-.sc-panel {
-  box-sizing: border-box;
-  margin: 12px 0 4px;
-  padding: 14px 16px;
-  border: 1px solid var(--edge);
-  border-radius: 16px;
-  color: var(--ink);
-}
-.sc-panel-head {
-  display: flex;
+/* Beside the name: the SuperFactor link, then the verified-human seal. */
+.sc-prow {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
+  white-space: nowrap;
+}
+.sc-phuman {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--good);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+/* Under the follow counts on a caller's profile, in the same look as them. */
+.sc-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 20px;
 }
 .sc-panel-brand {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
+  margin-right: -8px;
 }
 .sc-panel-brand .mark {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
-.sc-human {
-  color: var(--good);
-  font-size: 12px;
-  font-weight: 500;
+.sc-pstat b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 .sc-panel-link {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
   text-decoration: none;
 }
 .sc-panel-link::after {
@@ -429,21 +440,7 @@
 }
 .sc-panel-link:hover {
   color: var(--ink);
-}
-.sc-panel-score {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 16px;
-  margin-top: 12px;
-}
-.sc-panel-score .sc-sf {
-  margin-left: 0;
-}
-.sc-panel-score .sc-sf b {
-  font-size: 28px;
-  line-height: 28px;
+  text-decoration: underline;
 }
 .sc-last {
   display: inline-flex;
@@ -464,27 +461,6 @@
 }
 .sc-new {
   color: var(--muted);
-  font-size: 13px;
-}
-.sc-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin: 14px 0 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--edge);
-}
-.sc-stats dd {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 20px;
-  font-variant-numeric: tabular-nums;
-}
-.sc-stats dt {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 16px;
 }
 
 .sc-note {
