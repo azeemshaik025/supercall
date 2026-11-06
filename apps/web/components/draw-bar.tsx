@@ -396,17 +396,18 @@ export function DrawBar({ chart }: { chart: Chart | null }) {
         onClick={cancel}
       />
       <Rule />
-      {MAIN.map((t) => (
-        <ToolButton
-          key={t.name}
-          label={t.label}
-          icon={t.icon}
-          on={active === t.name}
-          onClick={() => start(t.name)}
-        />
-      ))}
-      <Rule />
-      <div className="flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto [scrollbar-width:none]">
+      {/* Every tool scrolls in one list; cursor stays on top, the controls at the bottom. */}
+      <div className="flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {MAIN.map((t) => (
+          <ToolButton
+            key={t.name}
+            label={t.label}
+            icon={t.icon}
+            on={active === t.name}
+            onClick={() => start(t.name)}
+          />
+        ))}
+        <Rule />
         {MORE.map((t) => (
           <ToolButton
             key={t.name}
