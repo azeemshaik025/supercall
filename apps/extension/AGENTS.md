@@ -5,16 +5,15 @@ The X browser extension: a live call card under a caller's post. WXT and React, 
 ## Owns
 
 - Finding call posts in the X timeline and drawing the card.
-- The side panel: Privy sign-in (the web app's Privy app, so the same account and embedded
-  wallet), the wallet's USDC on Arc, and the copy sheet for the call a card's Copy picked. X's
-  sign-in goes to X and back, so it runs in its own window (`entrypoints/auth`).
-- Nothing is signed inside X's page: wallets only reach the extension's own pages. When the side
-  panel can't open, Copy falls back to our site in a popup.
+- The side panel: the account, wallet, USDC and caller status, and the copy sheet for the call a
+  card's Copy picked. It has no sign-in of its own: a script on the Supercall site
+  (`entrypoints/site.ts`) hands over the site's Privy session, and the panel sends it to the API.
+- Anything a wallet signs (sign-in, World ID, the caller record, a copy's fee) opens the site in a
+  wallet-sized window, where the session and wallet already are. Nothing is signed in X's page.
 
 ## Belongs elsewhere
 
-- The copy flow's API (quote, fee, order): `apps/api`. Until it takes copies, the panel shows
-  the fee and leaves Pay off.
+- Signing and the copy flow: `apps/web`, in its popup pages (`/connect`, `/verify`, `/m/<id>`).
 - Call data: `apps/api`, in the shapes from `@supercall/api-schema`.
 
 ## Spec

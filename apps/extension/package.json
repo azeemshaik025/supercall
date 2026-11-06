@@ -11,10 +11,8 @@
     "fake-lookup": "tsx scripts/fake-lookup.ts"
   },
   "dependencies": {
-    "@privy-io/react-auth": "^3.51.2",
     "@supercall/api-schema": "workspace:*",
     "@supercall/chains": "workspace:*",
-    "@worldcoin/idkit": "^4.6.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "uqr": "0.1.2",
