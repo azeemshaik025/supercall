@@ -34,6 +34,14 @@ ARKIV_API_KEY=<rabdi key> npx --yes pnpm@11.9.0 --filter @supercall/arkiv seed
 Reader code: [packages/arkiv/src/arkiv.ts](packages/arkiv/src/arkiv.ts). It needs no private key to
 read; `ARKIV_PRIVATE_KEY` is only for writing.
 
+## Chrome extension
+
+Shows which X posts are calls, the caller's SuperFactor on their profile, and copies a call from
+your own wallet. Install it from
+[apps/extension/release/supercall-extension-1.0.0.zip](apps/extension/release/supercall-extension-1.0.0.zip):
+unzip, open `chrome://extensions`, turn on Developer mode, **Load unpacked**, pick the folder. Steps
+in [apps/extension/release/README.md](apps/extension/release/README.md).
+
 ## Stack
 
 Monorepo (pnpm + turbo): `apps/{web,api,worker,extension}`, `packages/{arkiv,core,db,…}`,
