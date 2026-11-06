@@ -177,7 +177,7 @@ describe.skipIf(!liveArkiv || !writerKey)('records on Rabdi', () => {
     await expect(readOnly.writeCall(rajsCall(someCaller))).rejects.toThrow(/read-only/)
   }, 60_000)
 
-  it('refuses even our key when it tries to delete, change, extend or reclaim a call', async () => {
+  it('refuses even our key when it tries to delete, change or reclaim a call, but anyone may extend it', async () => {
     const { key: callKey } = await arkiv.writeCall(rajsCall(someCaller))
     const us = createWalletClient({
       account: privateKeyToAccount(privateKey),
@@ -192,9 +192,13 @@ describe.skipIf(!liveArkiv || !writerKey)('records on Rabdi', () => {
     await expect(
       us.patchEntity(Payload, entityKey, { set: { payload: moveStop } }),
     ).rejects.toThrow(/owned by/)
-    const longer = ExpirationTime.fromDays(60)
-    await expect(us.extendEntity({ entityKey, expiration: longer })).rejects.toThrow(/owned by/)
     await expect(us.changeOwnership({ entityKey, newOwner: writer })).rejects.toThrow(/owned by/)
+
+    // permissionlessExtension: a call lives on when extended, still readonly, burned and unchanged.
+    await us.extendEntity({ entityKey, expiration: ExpirationTime.fromDays(60) })
+    const onChain = await anyone.getEntity(entityKey)
+    expect(onChain.$creationFlags.readonly).toBe(true)
+    expect(isAddressEqual(onChain.$owner, BURN)).toBe(true)
     expect(await arkiv.call(callKey)).toMatchObject({ stop: 2850000000 })
   }, 120_000)
 
@@ -271,6 +275,37 @@ describe.skipIf(!liveArkiv || !writerKey)('records on Rabdi', () => {
     expect(keys).toContain(armedEth)
     expect(keys).not.toContain(pendingEth)
     expect(keys).not.toContain(armedBtc)
+  }, 120_000)
+
+  it('filters statuses by super factor and boost, and finds calls across callers by asset', async () => {
+    const mk = (superFactor: number, boostBps: number) => ({
+      v: 2 as const,
+      call: keccak256(toHex(`flt-${superFactor}-${boostBps}-${Date.now()}`)),
+      caller: someCaller,
+      asset: 'WETH',
+      status: 'armed' as const,
+      supercall: superFactor >= 80,
+      superFactor,
+      boostBps,
+      followBand: 'low' as const,
+      opposeBand: 'low' as const,
+    })
+    const strong = await arkiv.writeStatus(mk(90, 0), now() + hour)
+    const weak = await arkiv.writeStatus(mk(20, 0), now() + hour)
+    const boosted = await arkiv.writeStatus(mk(50, 300), now() + hour)
+    deletable.push(strong, weak, boosted)
+
+    const bySuper = (await arkiv.statuses({ minSuper: 80 })).map((s) => s.key)
+    expect(bySuper).toContain(strong)
+    expect(bySuper).not.toContain(weak)
+
+    const byBoost = (await arkiv.statuses({ boosted: true })).map((s) => s.key)
+    expect(byBoost).toContain(boosted)
+    expect(byBoost).not.toContain(strong)
+
+    const asset = `BYASSET${Date.now()}`
+    const { key: onAsset } = await arkiv.writeCall({ ...rajsCall(someCaller), asset })
+    expect((await arkiv.callsByAsset(asset)).map((c) => c.key)).toEqual([onAsset])
   }, 120_000)
 
   it("reads all 101 of an asset's statuses, past the 100 a page holds", async () => {
