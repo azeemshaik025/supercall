@@ -1,0 +1,112 @@
+// Becoming a caller from the side panel: the username (from X when signed in with it), a World
+// ID proof bound to the wallet, then one signature that writes the caller record to Arkiv. From
+// then on, posts on X are read as calls. The API checks every step.
+import { usePrivy, useWallets } from '@privy-io/react-auth'
+import { useCallback, useEffect, useState } from 'react'
+import { ApiError, api } from './api'
+
+type Me = {
+  profile: { username: string; wallet: string; worldVerified: boolean } | null
+  worldVerified: boolean
+}
+type MyCaller = {
+  key: string | null
+  caller: { handle: string; superFactor: number } | null
+  draft: { fields: { joinedAt: number }; typedData: Record<string, unknown> } | null
+}
+
+export type CallerStep = 'loading' | 'error' | 'username' | 'world' | 'record' | 'done'
+
+/** An X handle as a username, if it fits the API's rule (3–20 of a–z, 0–9 and _). */
+export const usernameFromX = (handle: string | null | undefined) => {
+  const name = handle?.toLowerCase()
+  return name && /^[a-z0-9_]{3,20}$/.test(name) ? name : undefined
+}
+
+export function useCallerSetup() {
+  const { ready, authenticated, user, getAccessToken } = usePrivy()
+  const { wallets } = useWallets()
+  const [me, setMe] = useState<Me>()
+  const [caller, setCaller] = useState<MyCaller>()
+  const [step, setStep] = useState<CallerStep>('loading')
+  const [error, setError] = useState<string>()
+  const xHandle = user?.twitter?.username
+
+  const load = useCallback(async () => {
+    if (!ready || !authenticated) return
+    setError(undefined)
+    try {
+      const token = await getAccessToken()
+      let m = await api<Me>('/me', { token })
+      // Signed in with X: the X handle is the username, unless someone already has it.
+      const fromX = usernameFromX(xHandle)
+      if (!m.profile && fromX) {
+        try {
+          await api('/me', { method: 'PUT', token, body: { username: fromX } })
+          m = await api<Me>('/me', { token })
+        } catch (e) {
+          if (!(e instanceof ApiError)) throw e
+        }
+      }
+      setMe(m)
+      if (!m.profile) return setStep('username')
+      if (!m.profile.worldVerified) return setStep('world')
+      const c = await api<MyCaller>('/me/caller', { token })
+      setCaller(c)
+      setStep(c.key ? 'done' : 'record')
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : String(e)
+      setError(
+        reason === 'Failed to fetch'
+          ? 'Can’t reach the API. Is it running, and is NEXT_PUBLIC_API_URL set?'
+          : `Couldn’t check your account: ${reason}`,
+      )
+      setStep('error')
+    }
+  }, [ready, authenticated, xHandle, getAccessToken])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const saveUsername = async (username: string) => {
+    setError(undefined)
+    try {
+      await api('/me', {
+        method: 'PUT',
+        token: await getAccessToken(),
+        body: { username: username.toLowerCase() },
+      })
+      await load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  /** Signs the caller record with the profile's wallet; the API writes it to Arkiv. */
+  const signRecord = async () => {
+    setError(undefined)
+    const draft = caller?.draft
+    const address = me?.profile?.wallet
+    const wallet = wallets.find((w) => w.address.toLowerCase() === address)
+    if (!draft || !address) return
+    if (!wallet) return setError('Your profile publishes from a wallet this panel can’t reach.')
+    try {
+      const provider = await wallet.getEthereumProvider()
+      const signature = (await provider.request({
+        method: 'eth_signTypedData_v4',
+        params: [address, JSON.stringify(draft.typedData)],
+      })) as string
+      await api('/me/caller', {
+        method: 'POST',
+        token: await getAccessToken(),
+        body: { joinedAt: draft.fields.joinedAt, signature },
+      })
+      await load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  return { step, me, caller, error, reload: load, saveUsername, signRecord, xHandle }
+}
