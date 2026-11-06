@@ -3,6 +3,7 @@ import { PrivyProvider, useCreateWallet, usePrivy, useWallets } from '@privy-io/
 import { CHAIN } from '@supercall/chains'
 import { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { renderSVG } from 'uqr'
 import { createPublicClient, erc20Abi, http } from 'viem'
 import { browser } from 'wxt/browser'
 import { feeOf, fromMicro, toMicro } from '../../lib/fee'
@@ -85,10 +86,72 @@ function useWallet() {
   return { address, creating: ready && !address }
 }
 
+const CopyIcon = () => (
+  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+    <rect x="5" y="5" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M11 5V2H2v9h3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+)
+const QrIcon = () => (
+  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+    <path
+      d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h2v2H9zM12 12h2v2h-2zM12 9h2v2M9 12h2v2"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+  </svg>
+)
+
+/** Copies the address, and says so for a moment. */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      type="button"
+      className="sc-icon"
+      title={copied ? 'Copied' : 'Copy address'}
+      aria-label="Copy address"
+      onClick={() =>
+        navigator.clipboard.writeText(text).then(() => {
+          setCopied(true)
+          setTimeout(() => setCopied(false), 1500)
+        })
+      }
+    >
+      {copied ? <span className="sc-good">✓</span> : <CopyIcon />}
+    </button>
+  )
+}
+
+/** The address as a QR code, to send USDC to it on Arc. */
+function AddFunds({ address }: { address: string }) {
+  const svg = renderSVG(address, { border: 2, pixelSize: 6 })
+  return (
+    <div className="sc-funds">
+      <span className="sc-label">Add funds</span>
+      <img
+        className="sc-qr"
+        src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
+        alt="QR code of your wallet address"
+      />
+      <div className="sc-row">
+        <span className="sc-mono sc-break">{address}</span>
+        <CopyButton text={address} />
+      </div>
+      <p className="sc-muted">Send USDC on Arc testnet only. Other networks won’t arrive here.</p>
+      <a className="sc-link" href="https://faucet.circle.com" target="_blank" rel="noreferrer">
+        Get testnet USDC from Circle’s faucet
+      </a>
+    </div>
+  )
+}
+
 function Account() {
   const { user, logout } = usePrivy()
   const { address, creating } = useWallet()
   const balance = useUsdc(address)
+  const [showFunds, setShowFunds] = useState(false)
   const name = user?.twitter?.username ? `@${user.twitter.username}` : (user?.email?.address ?? '')
   return (
     <section className="sc-box">
@@ -104,8 +167,25 @@ function Account() {
       <dl className="sc-facts">
         <div>
           <dt>Wallet</dt>
-          <dd className="sc-mono" title={address}>
-            {address ? short(address) : creating ? 'Creating…' : 'Loading…'}
+          <dd className="sc-wallet">
+            <span className="sc-mono" title={address}>
+              {address ? short(address) : creating ? 'Creating…' : 'Loading…'}
+            </span>
+            {address && (
+              <>
+                <CopyButton text={address} />
+                <button
+                  type="button"
+                  className={showFunds ? 'sc-icon sc-on' : 'sc-icon'}
+                  title="Add funds"
+                  aria-label="Add funds"
+                  aria-expanded={showFunds}
+                  onClick={() => setShowFunds((v) => !v)}
+                >
+                  <QrIcon />
+                </button>
+              </>
+            )}
           </dd>
         </div>
         <div>
@@ -113,6 +193,7 @@ function Account() {
           <dd className="sc-mono">{!address ? '–' : balance === undefined ? '…' : usd(balance)}</dd>
         </div>
       </dl>
+      {address && showFunds && <AddFunds address={address} />}
     </section>
   )
 }

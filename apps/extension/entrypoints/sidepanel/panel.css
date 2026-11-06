@@ -226,3 +226,44 @@ body {
   cursor: pointer;
   padding: 0;
 }
+.sc-wallet {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--edge);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+}
+.sc-icon:hover,
+.sc-icon.sc-on {
+  border-color: var(--blue);
+}
+.sc-funds {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--edge);
+}
+.sc-qr {
+  display: block;
+  align-self: center;
+  width: 176px;
+  height: 176px;
+  image-rendering: pixelated;
+  padding: 8px;
+  background: #fff;
+}
+.sc-break {
+  min-width: 0;
+  font-size: 12px;
+  word-break: break-all;
+}
