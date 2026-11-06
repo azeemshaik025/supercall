@@ -15,8 +15,9 @@ import { Button } from './ui'
 
 const APP_ID = process.env.NEXT_PUBLIC_WORLD_APP_ID as `app_${string}` | undefined
 const RP_ID = process.env.NEXT_PUBLIC_WORLD_RP_ID
+/** Staging unless set to production: the API's default too (apps/api/src/server.ts). */
 const ENVIRONMENT =
-  process.env.NEXT_PUBLIC_WORLD_ENVIRONMENT === 'staging' ? 'staging' : 'production'
+  process.env.NEXT_PUBLIC_WORLD_ENVIRONMENT === 'production' ? 'production' : 'staging'
 /** The API's WORLD_ACTION (@supercall/identity). */
 const ACTION = 'verify-caller'
 

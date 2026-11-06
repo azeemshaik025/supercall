@@ -18,8 +18,9 @@ function required(name: string): string {
   return v
 }
 
+// Staging until the production World ID app is approved: set it to production to switch.
 export const environment = (process.env.NEXT_PUBLIC_WORLD_ENVIRONMENT ??
-  'production') as WorldEnvironment
+  'staging') as WorldEnvironment
 if (environment !== 'production' && environment !== 'staging') {
   throw new Error('NEXT_PUBLIC_WORLD_ENVIRONMENT must be production or staging')
 }
