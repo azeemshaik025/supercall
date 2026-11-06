@@ -18,14 +18,15 @@ const badge = 'supercall-badge'
 const profileBadge = 'supercall-profile-badge'
 const panel = 'supercall-profile'
 
-/** X's theme from its background: white is light, anything dark is dim or lights out. */
+/** X's theme from its background: white is light, navy (#15202b) is dim, black is lights out. */
 function theme() {
   const [r = 0, g = 0, b = 0] = (
     getComputedStyle(document.body).backgroundColor.match(/\d+/g) ?? []
   )
     .slice(0, 3)
     .map(Number)
-  return 0.299 * r + 0.587 * g + 0.114 * b > 128 ? 'light' : 'dark'
+  if (0.299 * r + 0.587 * g + 0.114 * b > 128) return 'light'
+  return r + g + b > 40 ? 'dim' : 'dark'
 }
 // The toolbar follows the browser's theme, not X's: dark toolbars get the light icon.
 function toolbarIcon() {
