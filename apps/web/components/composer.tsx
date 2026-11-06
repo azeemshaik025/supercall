@@ -16,7 +16,7 @@ import { API, ApiError, loadCandles } from '@/lib/api'
 import { useCallerSetup } from '@/lib/caller'
 import { pct, price, usd } from '@/lib/format'
 import { useLivePrice } from '@/lib/live-price'
-import { CALL_FEE } from '@/lib/money'
+import { CALL_FEE, PLATFORM_FEE } from '@/lib/money'
 import { callImagePath } from '@/lib/og'
 import { type CallInput, PUBLISH_STEP, type PublishStep, usePublish } from '@/lib/publish'
 import { callLink, postOnX } from '@/lib/share'
@@ -317,7 +317,7 @@ export function Composer({ markets }: { markets: Market[] }) {
                 Entry zone{' '}
                 <Info
                   label="About the entry zone"
-                  text="Followers can copy while price is inside this zone around your entry."
+                  text="Followers can copy while price is inside this zone around your entry. Outside it they’d buy worse than you, so copying pauses until price is back in. Wider lets more people in; tighter keeps their entries close to yours."
                 />
               </span>
               <span className="text-[13px] tabular-nums">±{(band * 100).toFixed(2)}%</span>
@@ -387,7 +387,7 @@ export function Composer({ markets }: { markets: Market[] }) {
                 Boost to Explore{' '}
                 <Info
                   label="About boost"
-                  text="Give up points of your cut to be featured on Explore. On a right call they go to your followers as credit."
+                  text="Callers with SuperFactor 70+ can give up points of their cut to be featured on Explore. On a right call those points go to your followers as credit; followers’ protection doesn’t change."
                 />
               </span>
               <span className="tabular-nums">
@@ -420,20 +420,22 @@ export function Composer({ markets }: { markets: Market[] }) {
 
           <dl className="flex flex-col border-t border-line text-[13px]">
             <div className="flex justify-between border-b border-line py-2.5">
-              <dt
-                className="text-muted"
-                title="What the target pays for every $1 risked to the stop"
-              >
+              <dt className="flex items-center gap-1.5 text-muted">
                 Payoff
+                <Info
+                  label="About payoff"
+                  text="What the target pays for every $1 risked to the stop."
+                />
               </dt>
               <dd className="tabular-nums">{valid ? `${rewardRisk(levels).toFixed(1)}×` : '—'}</dd>
             </div>
             <div className="flex items-center justify-between border-b border-line py-2.5">
-              <dt
-                className="text-muted"
-                title="Rough odds the target is hit before the stop, from the distances alone. A stop inside normal swings counts as riskier. Not a forecast."
-              >
+              <dt className="flex items-center gap-1.5 text-muted">
                 Odds
+                <Info
+                  label="About odds"
+                  text="Rough odds the target is hit before the stop, from the distances alone. A stop inside normal swings counts as riskier. Not a forecast."
+                />
               </dt>
               <dd className="flex items-center gap-2 tabular-nums">
                 {valid ? (
@@ -452,7 +454,15 @@ export function Composer({ markets }: { markets: Market[] }) {
               </dd>
             </div>
             <div className="flex justify-between border-b border-line py-2.5">
-              <dt className="text-muted">Your cut</dt>
+              <dt className="flex items-center gap-1.5 text-muted">
+                Your cut
+                <Info
+                  label="How your cut is worked out"
+                  wide
+                  align="left"
+                  text={<CutBreakdown cut={cut} boost={Math.min(boost, maxBoost(sf))} sf={sf} />}
+                />
+              </dt>
               <dd className="tabular-nums">{pct(cut)} of kept fees</dd>
             </div>
             <dt className="pt-3.5 pb-1 text-[12px] text-muted">For every $1,000 copied</dt>
@@ -461,7 +471,13 @@ export function Composer({ markets }: { markets: Market[] }) {
               <dd className="text-good tabular-nums">{usd(keepPer1k)}</dd>
             </div>
             <div className="flex justify-between py-2.5">
-              <dt className="text-muted">If you're wrong, your fund pays</dt>
+              <dt className="flex items-center gap-1.5 text-muted">
+                If you're wrong, your fund pays
+                <Info
+                  label="About your fund"
+                  text={`Followers get their call fee back, plus up to ${Math.round(CREDIT_SHARE * 100)}% of their loss as credit from your fund. The fund fills from the fees you keep on calls that work.`}
+                />
+              </dt>
               <dd className="text-bad tabular-nums">up to {usd(payPer1k)}</dd>
             </div>
           </dl>
@@ -948,5 +964,44 @@ function ReviewModal({
         </div>
       </div>
     </div>
+  )
+}
+
+/** The ⓘ on "Your cut": where the fees on $1,000 copied go, right or wrong. */
+function CutBreakdown({ cut, boost, sf }: { cut: number; boost: number; sf: number }) {
+  const callFee = 1000 * CALL_FEE
+  const ours = 1000 * PLATFORM_FEE
+  const yours = callFee * cut
+  const boosted = callFee * boost
+  const fund = Math.max(0, callFee - yours - boosted)
+  const money = (n: number) => `$${n.toFixed(2)}`
+  return (
+    <>
+      <span className="block text-ink">For every $1,000 copied</span>
+      <span className="mt-2 grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 tabular-nums">
+        <span>Call fee ({pct(CALL_FEE)}), held for this call</span>
+        <span className="text-right text-ink">{money(callFee)}</span>
+        <span>Platform fee ({pct(PLATFORM_FEE)}), to Supercall</span>
+        <span className="text-right">{money(ours)}</span>
+      </span>
+      <span className="mt-3 block">
+        <span className="text-good">If you’re right</span>, each follower’s fee is kept, up to half
+        their profit. You get {pct(cut)} of it ({money(yours)}), from your SuperFactor of{' '}
+        {Math.round(sf)}
+        {boost > 0 && (
+          <>
+            {' '}
+            minus your {Math.round(boost * 100)}-point boost, which goes to your followers as credit
+            ({money(boosted)})
+          </>
+        )}
+        . The other {money(fund)} goes to your fund. Ending above entry by the deadline pays half
+        your cut.
+      </span>
+      <span className="mt-2 block">
+        <span className="text-bad">If you’re wrong</span>, you get nothing. Followers get their fee
+        back, plus up to {Math.round(CREDIT_SHARE * 100)}% of their loss as credit from your fund.
+      </span>
+    </>
   )
 }
