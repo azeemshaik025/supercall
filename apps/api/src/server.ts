@@ -6,8 +6,10 @@ import { createFlashClient } from '@supercall/flash'
 import { createPrivyIdentify, type WorldEnvironment } from '@supercall/identity'
 import { createPublicClient, erc20Abi, http } from 'viem'
 import { createApp } from './app'
+import { readerFromEnv } from './ask'
 import { createHisaab } from './hisaab'
 import { createMarkets } from './market-data/markets'
+import { priceIn } from './posts'
 import { createXFeed } from './x-feed'
 
 function required(name: string): string {
@@ -45,6 +47,7 @@ const arc = createPublicClient({ chain: viemChain(CHAIN), transport: http(arcRpc
 
 const flash = createFlashClient({ apiKey: required('FLASH_API_KEY') })
 const markets = createMarkets(flash)
+const reader = readerFromEnv()
 
 export const arkiv = createArkiv({
   writer: arkivWriter,
@@ -85,11 +88,15 @@ export const app = createApp({
       functionName: 'balanceOf',
       args: [wallet],
     }),
+  ask: reader?.ask,
+  model: reader?.model ?? 'none',
+  xSecret: process.env.X_API_SECRET || undefined,
+  xFeed,
+  priceAt: priceIn(arc),
   webOrigins: (process.env.WEB_ORIGIN ?? 'http://localhost:3000').split(',').map((o) => o.trim()),
   world: {
     rpId: required('NEXT_PUBLIC_WORLD_RP_ID'),
     signingKey: required('WORLD_RP_SIGNING_KEY'),
     environment,
   },
-  xFeed,
 })
