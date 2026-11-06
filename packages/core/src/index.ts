@@ -37,6 +37,8 @@ export {
 export { callScore, nextScore, SF, superFactor } from './superfactor.ts'
 export type {
   Band,
+  Call,
+  Caller,
   CallStatus,
   CallType,
   Copy,
@@ -52,3 +54,9 @@ export type {
   WorkedCopy,
   WrongCopy,
 } from './types.ts'
+
+export const FEE = {
+  platform: 0.001,
+  call: 0.006,
+  definitive: 0.001,
+} as const

@@ -1,4 +1,4 @@
-import type { CallStatus, CallType, Direction } from './types.ts'
+import type { CallStatus, CallType, Direction, Levels } from './types.ts'
 
 export const MIN_TARGET_DISTANCE = 0.01
 export const ENTRY_BAND = 0.005
@@ -12,10 +12,11 @@ export function isInEntryBand(currentPrice: number, entry: number) {
   return Math.abs(currentPrice - entry) / entry <= ENTRY_BAND
 }
 
-export function suggestedStop(entry: number, target: number) {
-  const dist = Math.abs(target - entry)
-  const stopDist = Math.min(dist, entry * MAX_SUGGESTED_STOP)
-  return target > entry ? entry - stopDist : entry + stopDist
+export function suggestedStop({ direction, entry, target }: Omit<Levels, 'stop'>): number {
+  const most = entry * MAX_SUGGESTED_STOP
+  return direction === 'long'
+    ? Math.max(entry - (target - entry), entry - most)
+    : Math.min(entry + (entry - target), entry + most)
 }
 
 export function inBand(call: { entry: number; bandPct: number }, price: number): boolean {

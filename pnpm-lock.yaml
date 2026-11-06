@@ -41,6 +41,9 @@ importers:
       '@supercall/arkiv':
         specifier: workspace:*
         version: link:../../packages/arkiv
+      '@supercall/chains':
+        specifier: workspace:*
+        version: link:../../packages/chains
       '@supercall/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -50,6 +53,9 @@ importers:
       '@supercall/identity':
         specifier: workspace:*
         version: link:../../packages/identity
+      '@worldcoin/idkit-core':
+        specifier: ^4.5.0
+        version: 4.6.0
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@opentelemetry/api@1.10.0)(postgres@3.4.9)
@@ -258,6 +264,9 @@ importers:
       '@privy-io/node':
         specifier: ^0.36.0
         version: 0.36.0(@solana/kit@5.5.1(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10))(viem@2.57.16(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@4.6.7))
+      '@worldcoin/idkit-core':
+        specifier: ^4.5.0
+        version: 4.6.0
     devDependencies:
       '@supercall/config':
         specifier: workspace:*
@@ -1412,6 +1421,9 @@ packages:
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
 
+  '@noble/secp256k1@2.3.0':
+    resolution: {integrity: sha512-0TQed2gcBbIrh7Ccyw+y/uZQvbJwm7Ao4scBUxqpBCcsOlZG0O4KGfjtNAy/li4W8n1xt3dxrwJ0beZ2h2G6Kw==}
+
   '@opentelemetry/api@1.10.0':
     resolution: {integrity: sha512-lMkyes8iHrG+mk6WH7X70MdCLI2RS0FwNBY1PyQ8UemaijE2m5mv5A0Niy3HtbYTFrgkUEQjFMXmSAk2hQDuPQ==}
     engines: {node: '>=8.0.0'}
@@ -2167,6 +2179,9 @@ packages:
   '@stablelib/base64@1.0.1':
     resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
 
+  '@stablelib/utf8@1.0.2':
+    resolution: {integrity: sha512-sDL1aB2U8FIpj7SjQJMxbOFIFkKvDKQGPHSrYejHZhtLNSK3qHe6ZIfa0woWkOiaJsdYslFzrc0VWXJZHmSIQQ==}
+
   '@stripe/crypto@1.1.3':
     resolution: {integrity: sha512-1Qz1B9uuF1wwuu3IXtHP2Rllm/pCOZ80is6jWweoPPQLwTnCjTT1Keia4IHHSSRN88Miq8s8UQ5wT5M0A/b6ZQ==}
     peerDependencies:
@@ -2620,6 +2635,18 @@ packages:
 
   '@webext-core/match-patterns@2.0.0':
     resolution: {integrity: sha512-EsyMMKfQuSE4rWCjP/TifwvUWlhC/OhiGn5OK3p9F0d57UmtLib0nzguzPKyxM1/kZV7SkE+jYXkE8gsdPRLmw==}
+
+  '@worldcoin/idkit-core@4.6.0':
+    resolution: {integrity: sha512-d5JwqXPMWZvIp7ksC5+pt58Vuu9nognsHml603HDYaSBn6p7lPcBVksscSTlN2Saa/QMxXiQUrbpjVJIrb+n1g==}
+    peerDependencies:
+      expo-crypto: ^57.0.3
+    peerDependenciesMeta:
+      expo-crypto:
+        optional: true
+
+  '@worldcoin/idkit-server@1.2.0':
+    resolution: {integrity: sha512-CvaiX5idPbPsETBkbbD1cwueM2WJn2CNQ3vMZbFf7LKbJP+IKmvbxW3pubG5OThRKuciqEAHocxnuGLRYI9WuQ==}
+    engines: {node: '>=18'}
 
   '@wxt-dev/browser@0.3.7':
     resolution: {integrity: sha512-TCBcayayb2mycJxt9X3kTq3QZerqltx/I4FW1WVTafBcqQC6vUaDz5Sboummy0rVsSMbYzyKnS5118VTw0dt4A==}
@@ -4033,6 +4060,10 @@ packages:
   pump@3.0.4:
     resolution: {integrity: sha512-VS7sjc6KR7e1ukRFhQSY5LM2uBWAUPiOPa/A3mkKmiMwSmRFUITt0xuj+/lesgnCv+dPIEYlkzrcyXgquIHMcA==}
 
+  punycode@2.3.1:
+    resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
+    engines: {node: '>=6'}
+
   qrcode@1.5.3:
     resolution: {integrity: sha512-puyri6ApkEHYiVl4CFzo1tDkAZ+ATcnbJrJ6RiBM1Fhctdn/ix9MTE3hRph33omisEbC/2fcfemsseiKgBPKZg==}
     engines: {node: '>=10.13.0'}
@@ -4375,6 +4406,10 @@ packages:
 
   tr46@0.0.3:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
+
+  tr46@5.1.1:
+    resolution: {integrity: sha512-hdF5ZgjTqgAntKkklYw0R03MG2x/bSzTtkxmIRw/sTNV8YXsCJ1tfLAX23lhxhHJlEf3CRCOCGGWw3vI3GaSPw==}
+    engines: {node: '>=18'}
 
   ts-algebra@2.0.0:
     resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
@@ -4737,12 +4772,20 @@ packages:
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
+  webidl-conversions@7.0.0:
+    resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
+    engines: {node: '>=12'}
+
   webpack-virtual-modules@0.6.2:
     resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
 
   whatwg-mimetype@3.0.0:
     resolution: {integrity: sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q==}
     engines: {node: '>=12'}
+
+  whatwg-url@14.2.0:
+    resolution: {integrity: sha512-De72GdQZzNTUBBChsXueQUnPKDkg/5A5zp7pFDuQAj5UFoENpiACU0wlCvzpAGnTkj++ihpKwKyYewn/XNUbKw==}
+    engines: {node: '>=18'}
 
   whatwg-url@5.0.0:
     resolution: {integrity: sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==}
@@ -5918,6 +5961,8 @@ snapshots:
   '@noble/hashes@1.7.1': {}
 
   '@noble/hashes@1.8.0': {}
+
+  '@noble/secp256k1@2.3.0': {}
 
   '@opentelemetry/api@1.10.0': {}
 
@@ -7257,6 +7302,8 @@ snapshots:
 
   '@stablelib/base64@1.0.1': {}
 
+  '@stablelib/utf8@1.0.2': {}
+
   '@stripe/crypto@1.1.3(@stripe/stripe-js@1.54.2)':
     dependencies:
       '@stripe/stripe-js': 1.54.2
@@ -8555,6 +8602,20 @@ snapshots:
       is-potential-custom-element-name: 1.0.1
 
   '@webext-core/match-patterns@2.0.0': {}
+
+  '@worldcoin/idkit-core@4.6.0':
+    dependencies:
+      '@noble/ciphers': 1.3.0
+      '@noble/hashes': 1.8.0
+      '@scure/base': 1.2.6
+      '@stablelib/utf8': 1.0.2
+      '@worldcoin/idkit-server': 1.2.0
+      whatwg-url: 14.2.0
+
+  '@worldcoin/idkit-server@1.2.0':
+    dependencies:
+      '@noble/hashes': 1.8.0
+      '@noble/secp256k1': 2.3.0
 
   '@wxt-dev/browser@0.3.7':
     dependencies:
@@ -9924,6 +9985,8 @@ snapshots:
       end-of-stream: 1.4.5
       once: 1.4.0
 
+  punycode@2.3.1: {}
+
   qrcode@1.5.3:
     dependencies:
       dijkstrajs: 1.0.3
@@ -10300,6 +10363,10 @@ snapshots:
       typed-array-buffer: 1.0.3
 
   tr46@0.0.3: {}
+
+  tr46@5.1.1:
+    dependencies:
+      punycode: 2.3.1
 
   ts-algebra@2.0.0: {}
 
@@ -10710,9 +10777,16 @@ snapshots:
 
   webidl-conversions@3.0.1: {}
 
+  webidl-conversions@7.0.0: {}
+
   webpack-virtual-modules@0.6.2: {}
 
   whatwg-mimetype@3.0.0: {}
+
+  whatwg-url@14.2.0:
+    dependencies:
+      tr46: 5.1.1
+      webidl-conversions: 7.0.0
 
   whatwg-url@5.0.0:
     dependencies:
