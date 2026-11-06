@@ -7,8 +7,7 @@
     "dev": "wxt",
     "build": "wxt build",
     "typecheck": "wxt prepare && tsc",
-    "test": "vitest run",
-    "fake-lookup": "tsx scripts/fake-lookup.ts"
+    "test": "vitest run"
   },
   "dependencies": {
     "@supercall/api-schema": "workspace:*",
