@@ -8,12 +8,17 @@ import { callerRoutes } from './callers'
 import { arkivSnapshot, callRoutes, type PriceOf } from './calls'
 import { copyRoutes, walletCopyRoutes } from './copy'
 import { crowdOf } from './crowd'
+import { depositRoutes } from './deposits'
 import type { Hisaab } from './hisaab'
 import type { createMarkets } from './market-data/markets'
 import { marketRoutes } from './markets'
+import { notificationRoutes } from './notifications'
+import { opposeRoutes } from './oppose'
+import { postRoutes } from './posts'
 import { profileRoutes } from './profiles'
 import { publishRoutes } from './publish'
 import { limitFlash } from './rate-limit'
+import type { Ask, Coin, Price } from './reading'
 import { requestLog } from './request-log'
 import { type WorldConfig, worldRoutes } from './world'
 import type { XFeed } from './x-feed'
@@ -29,6 +34,10 @@ export function createApp(deps: {
   priceOf: PriceOf
   usdcOf: (wallet: `0x${string}`) => Promise<bigint>
   webOrigins: string[]
+  ask?: Ask
+  model: string
+  priceAt: (coin: Coin, seconds: number) => Promise<Price | undefined>
+  xSecret?: string
   xFeed?: XFeed
 }) {
   const app = new Hono()
@@ -51,6 +60,10 @@ export function createApp(deps: {
   app.route('/calls', callRoutes(deps.arkiv, deps.priceOf, snapshot))
   app.route('/calls', copyRoutes({ ...deps, snapshot, crowd }))
   app.route('/', walletCopyRoutes({ ...deps, crowd }))
+  app.route('/', notificationRoutes(deps))
+  app.route('/calls', opposeRoutes({ ...deps, snapshot, crowd }))
   app.route('/callers', callerRoutes(deps.arkiv, deps.priceOf, snapshot))
+  app.route('/', postRoutes({ ...deps, snapshot }))
+  app.route('/', depositRoutes(deps))
   return app
 }
