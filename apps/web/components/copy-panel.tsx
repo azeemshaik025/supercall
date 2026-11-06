@@ -352,11 +352,23 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
         </div>
         <dl className="flex flex-col gap-3 text-[13px]">
           <div className="flex justify-between">
-            <dt className="text-muted">Est. at TP</dt>
+            <dt className="flex items-center gap-1.5 text-muted">
+              Est. at TP
+              <Info
+                label="If the call is right"
+                text="Your target sells. Your call fee is kept, up to half your profit: that’s how the caller gets paid. Estimates are after fees."
+              />
+            </dt>
             <dd className="text-good">{signedUsd(est.atTarget)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-muted">Est. at SL</dt>
+            <dt className="flex items-center gap-1.5 text-muted">
+              Est. at SL
+              <Info
+                label="If the call is wrong"
+                text="Your stop sells. Your call fee comes back, plus credit from the caller’s fund."
+              />
+            </dt>
             <dd className="text-bad">{signedUsd(est.atStop)}</dd>
           </div>
           <div className="flex items-center justify-between">
@@ -364,7 +376,7 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
               Call fee, refundable
               <Info
                 label="About the call fee"
-                text="Held on Arc. Paid to the caller only if the call works; refunded in full if it’s wrong."
+                text="Held in Hisaab on Arc until the call ends. The caller earns from it only if they’re right; if they’re wrong you get it all back. A 0.1% platform fee is taken from your buy and held with it."
               />
             </dt>
             <dd>{usd(est.fee)}</dd>

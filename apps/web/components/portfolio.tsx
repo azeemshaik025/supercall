@@ -18,7 +18,7 @@ import { statusLabel } from '@/lib/data'
 import { pct, price, signedUsd, usd } from '@/lib/format'
 import { useLivePrice } from '@/lib/live-price'
 import { useMe, walletOf } from '@/lib/me'
-import { cx, TokenIcon } from './ui'
+import { cx, Info, TokenIcon } from './ui'
 
 const TONE = { good: 'text-good', warn: 'text-warn', bad: 'text-bad', muted: 'text-muted' }
 
@@ -113,7 +113,16 @@ function Section({
               <th className="px-3 py-2.5 font-normal">Order</th>
               <th className="px-3 py-2.5 font-normal">Bought at</th>
               <th className="px-3 py-2.5 font-normal">Now</th>
-              <th className="px-3 py-2.5 font-normal">P/L</th>
+              <th className="px-3 py-2.5 font-normal">
+                <span className="flex items-center gap-1.5">
+                  P/L
+                  <Info
+                    label="How P/L is measured"
+                    below
+                    text="Measured from your buy price on what the buy spent. The platform fee and Flash’s costs came out of your size first; your call fee is held separately and comes back if the call is wrong."
+                  />
+                </span>
+              </th>
               <th className="px-3 py-2.5 font-normal">Call</th>
               <th className="px-5 py-2.5" />
             </tr>
