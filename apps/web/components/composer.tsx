@@ -655,7 +655,11 @@ function LevelInput({
     <div
       className={cx(
         'flex h-12 items-center gap-3 border bg-sidebar pr-1 pl-3',
-        bad ? 'border-bad/60' : picking ? 'border-steel' : 'border-line-strong',
+        bad
+          ? 'border-bad/60'
+          : picking
+            ? 'border-steel'
+            : 'border-line-strong focus-within:border-steel',
       )}
     >
       <span className={cx('size-2 shrink-0', s.dot)} />

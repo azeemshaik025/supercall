@@ -285,7 +285,7 @@ export function CopyPanel({ call, popup = false }: { call: Call; popup?: boolean
               Avbl <span className="text-ink">{usd(balance).slice(1)}</span> USDC
             </span>
           </span>
-          <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5">
+          <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5 focus-within:border-steel">
             <input
               type="text"
               inputMode="decimal"
@@ -477,7 +477,7 @@ function GoSuper({ call, wallet, open }: { call: Call; wallet: string; open: boo
               Avbl <span className="text-ink">{usd(balance).slice(1)}</span> USDC
             </span>
           </span>
-          <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5">
+          <span className="flex h-12 items-center border border-line-strong bg-sidebar px-3.5 focus-within:border-steel">
             <input
               type="text"
               inputMode="decimal"

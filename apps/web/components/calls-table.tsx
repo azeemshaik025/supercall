@@ -24,10 +24,7 @@ export function CallsTable({ calls, callers }: { calls: Call[]; callers: Caller[
   const [filter, setFilter] = useState<Filter>('All')
   const [q, setQ] = useState('')
   const now = new Date()
-  const callerMap = useMemo(
-    () => new Map(callers.map((c) => [c.handle, c])),
-    [callers],
-  )
+  const callerMap = useMemo(() => new Map(callers.map((c) => [c.handle, c])), [callers])
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return calls
@@ -48,7 +45,7 @@ export function CallsTable({ calls, callers }: { calls: Call[]; callers: Caller[
   return (
     <section aria-label="All calls" className="surface-card">
       <div className="flex flex-wrap items-center gap-2 px-4 py-3.5">
-        <label className="flex h-9 max-w-80 flex-[1_1_220px] items-center gap-2 border border-line-strong bg-sidebar px-3">
+        <label className="flex h-9 max-w-80 flex-[1_1_220px] items-center gap-2 border border-line-strong bg-sidebar px-3 focus-within:border-steel">
           <svg
             width="15"
             height="15"
