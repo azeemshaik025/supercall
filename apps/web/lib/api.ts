@@ -94,8 +94,9 @@ export async function fetchMarkets(): Promise<ApiMarket[]> {
 export type ApiCandle = { t: number; o: number; h: number; l: number; c: number; v: number }
 
 export async function fetchCandles(address: string, tf = '1h'): Promise<ApiCandle[]> {
-  const data = await get<{ candles: ApiCandle[] }>(`/markets/${address}/candles?tf=${tf}`).catch(
+  type Raw = { time: number; open: number; high: number; low: number; close: number; volume: number }
+  const data = await get<{ candles: Raw[] }>(`/markets/${address}/candles?tf=${tf}`).catch(
     () => ({ candles: [] }),
   )
-  return data.candles
+  return data.candles.map((c) => ({ t: c.time * 1000, o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume }))
 }

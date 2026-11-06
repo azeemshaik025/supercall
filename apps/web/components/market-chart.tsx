@@ -27,7 +27,25 @@ export function MarketChart({
     fetch(`${API}/markets/${address}/candles?tf=${tf}`)
       .then((r) => r.json())
       .then((d) => {
-        if (!stale) setCandles(d.candles ?? [])
+        if (stale) return
+        const raw = (d.candles ?? []) as {
+          time: number
+          open: number
+          high: number
+          low: number
+          close: number
+          volume: number
+        }[]
+        setCandles(
+          raw.map((c) => ({
+            t: c.time * 1000,
+            o: c.open,
+            h: c.high,
+            l: c.low,
+            c: c.close,
+            v: c.volume,
+          })),
+        )
       })
       .catch(() => {
         if (!stale) setCandles([])
