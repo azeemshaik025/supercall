@@ -17,6 +17,7 @@ can edit history. Anyone can query the whole record without our servers.
   `0x69C9Fb11006788a118520eD66518a666c0cf0772`
 - **Settler wallet** (writes settlement records from the worker):
   `0x59B6D1d967bdf035E3849f244063c3F61411A0dE`
+- **Architecture, and the life of a call:** [arkiv/architecture.md](arkiv/architecture.md)
 - **Records, owners, expiry, indexed fields:** [arkiv/schema.md](arkiv/schema.md)
 - **Why Arkiv over Postgres:** [arkiv/why-arkiv.md](arkiv/why-arkiv.md)
 - **How the filters and lifetimes fit the app:** [arkiv/how-you-use-arkiv.md](arkiv/how-you-use-arkiv.md)
