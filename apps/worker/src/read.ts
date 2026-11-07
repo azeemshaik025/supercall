@@ -3,7 +3,7 @@
 import { hisaabAbi, type Pool, swapPrice } from '@supercall/chains'
 import type { Swap } from '@supercall/core'
 import type { FlashClient } from '@supercall/flash'
-import { type Hex, type PublicClient, parseAbiItem } from 'viem'
+import { decodeFunctionData, type Hex, type PublicClient, parseAbiItem } from 'viem'
 
 const SWAP = parseAbiItem(
   'event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)',
@@ -13,6 +13,8 @@ const SWAP = parseAbiItem(
 const PAGE = 10_000n
 // Arc's public RPC rate-limits bursts.
 const BETWEEN_PAGES = 1_000
+// Hisaab.sol `enum Ending { Right, AboveEntry, Wrong, Refund }`.
+const REFUND = 3
 
 export async function* pages(from: bigint, to: bigint) {
   for (let start = from; start <= to; start += PAGE) {
@@ -163,10 +165,23 @@ export async function settledOnHisaab(arc: PublicClient, hisaab: Hex, call: Hex,
     )
   const copies = await read('CopySettled')
   const batches = await read('BatchSettled')
+  // Each copy's fill and kept fee as its batch posted them: CopySettled has only what Hisaab paid
+  // back. A refund keeps nothing, and anyone may send one, so its input isn't read.
+  const posted: { filled: boolean; keptFee: bigint }[] = []
+  for (const l of batches) {
+    if (l.eventName !== 'BatchSettled' || l.args.ending === REFUND) continue
+    const { input } = await arc.getTransaction({ hash: l.transactionHash })
+    const sent = decodeFunctionData({ abi: hisaabAbi, data: input })
+    if (sent.functionName !== 'settleBatch') continue
+    sent.args[3].forEach((r, i) => {
+      posted[Number(l.args.from) + i] = r
+    })
+  }
   return {
     copies: copies.flatMap((l) => (l.eventName === 'CopySettled' ? [l.args] : [])),
     batches: batches.flatMap((l) => (l.eventName === 'BatchSettled' ? [l.args] : [])),
     txs: [...new Set(batches.map((l) => l.transactionHash))],
+    posted,
   }
 }
 

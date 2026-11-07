@@ -160,11 +160,13 @@ export async function settleCall(w: Worker, call: Hex, round?: Round) {
   const arc = settler.reader
   const now = Math.floor(Date.now() / 1000)
   const hisaab = await settler.onHisaab(call)
-  if (hisaab.status === STATUS_DONE) {
-    return { call, done: 'settled already' as const }
-  }
   if (hisaab.expired && hisaab.cursor === hisaab.copyCount) {
     return { call, done: 'refunded as expired' as const }
+  }
+  // Done on Hisaab isn't done: the Arkiv write after the last batch can still have failed.
+  // ponytail: one Arkiv query per settled call each round; remember recorded calls once there are many.
+  if (hisaab.status === STATUS_DONE && (await arkiv.settlementOf(call))) {
+    return { call, done: 'settled already' as const }
   }
   let memo = w.memo.get(call)
   if (!memo) {
@@ -274,16 +276,12 @@ export async function settleCall(w: Worker, call: Hex, round?: Round) {
       record.caller,
     )
     const volume = scoredVolume(filledCopies, otherCallers)
+    // From what Hisaab was sent, not this run's inputs: a retry recomputes them later.
     const settledCopies = settled.copies.map((s, i) => ({
-      keptFee: inputs.kind === 'right' ? (inputs.kept[i] ?? 0n) : 0n,
+      keptFee: settled.posted[i]?.keptFee ?? 0n,
       newCredit: s.newCredit,
       platformFee: onHisaab[i]?.platformFee ?? 0n,
-      filled:
-        inputs.kind === 'right'
-          ? (inputs.filled[i] ?? false)
-          : inputs.kind === 'wrong'
-            ? (inputs.asks[i] ?? 0n) > 0n
-            : false,
+      filled: settled.posted[i]?.filled ?? false,
       profit: profits[i],
     }))
     const written = await arkiv.writeSettlement(
