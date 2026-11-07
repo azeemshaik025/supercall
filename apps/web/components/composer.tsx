@@ -615,7 +615,6 @@ function Strip({
           <span className="text-[15px] text-faint">—</span>
         ) : (
           <span className={cx('text-[15px] font-medium', change >= 0 ? 'text-good' : 'text-bad')}>
-            {change >= 0 ? '+' : ''}
             {pct(change)}
           </span>
         )}

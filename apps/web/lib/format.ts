@@ -23,6 +23,25 @@ export function usdShort(v: number): string {
   return v < 0 ? `−${s}` : s
 }
 
+/** A result in dollars with its sign: +$1.23, −$0.02, $0 when it rounds to nothing; K/M past $1,000. */
+export function signedMoney(v: number): string {
+  const r = Math.round(v * 100) / 100
+  if (r === 0) return '$0'
+  const a = Math.abs(r)
+  return `${r > 0 ? '+' : '−'}${a >= 1000 ? usdShort(a) : usd(a)}`
+}
+
+/** The colour for a result: green up, red down, muted when it rounds to $0. */
+export function moneyTone(v: number): string {
+  const r = Math.round(v * 100)
+  return r === 0 ? 'text-muted' : r > 0 ? 'text-good' : 'text-bad'
+}
+
+/** SuperFactor with at most two decimals: 51.14, 50. */
+export function sf(v: number): string {
+  return (Math.round(v * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 })
+}
+
 export function signedUsd(v: number): string {
   return `${v >= 0 ? '+' : '−'}${usd(Math.abs(v))}`
 }

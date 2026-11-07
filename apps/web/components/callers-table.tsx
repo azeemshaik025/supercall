@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { isOpen } from '@/lib/data'
-import { usdShort } from '@/lib/format'
+import { moneyTone, sf, signedMoney, usdShort } from '@/lib/format'
 import type { Call, Caller } from '@/lib/types'
 import { LastTen } from './caller-card'
 import { cx, Segmented, VerifiedBadge } from './ui'
@@ -90,7 +90,7 @@ export function CallersTable({ callers, calls }: { callers: Caller[]; calls: Cal
                   </span>
                 </Link>
                 <span className="flex items-center gap-2.5">
-                  <span className="w-6 font-medium">{c.superFactor}</span>
+                  <span className="w-12 font-medium tabular-nums">{sf(c.superFactor)}</span>
                   <span className="h-1.5 flex-1 bg-surface-3">
                     <span
                       className="block h-full bg-gradient-to-r from-steel/25 to-steel"
@@ -100,11 +100,8 @@ export function CallersTable({ callers, calls }: { callers: Caller[]; calls: Cal
                 </span>
                 <LastTen outcomes={c.lastTen} size={11} />
                 <span>{open || '—'}</span>
-                <span
-                  className={cx('font-medium', c.followersNetUsd >= 0 ? 'text-good' : 'text-bad')}
-                >
-                  {c.followersNetUsd >= 0 ? '+' : ''}
-                  {usdShort(c.followersNetUsd)}
+                <span className={cx('font-medium', moneyTone(c.followersNetUsd))}>
+                  {signedMoney(c.followersNetUsd)}
                 </span>
                 <span>{c.followersProfitablePct}%</span>
                 <span>{usdShort(c.poolUsd)}</span>

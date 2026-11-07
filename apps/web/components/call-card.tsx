@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { pct, price, timeLeft, usdShort } from '@/lib/format'
+import { pct, price, sf, timeLeft, usdShort } from '@/lib/format'
 import { moveVsEntry } from '@/lib/money'
 import type { Call, Caller } from '@/lib/types'
 import { StatusBar } from './status-bar'
@@ -53,7 +53,7 @@ export function CallCard({ call, caller }: { call: Call; caller?: Caller }) {
         <span className="text-silver">@{call.caller}</span>
         {caller?.verified && <VerifiedBadge />}
         <span className="ml-auto text-muted">
-          SF <span className="text-ink">{caller?.superFactor ?? 50}</span>
+          SF <span className="text-ink">{sf(caller?.superFactor ?? 50)}</span>
         </span>
       </div>
     </Link>

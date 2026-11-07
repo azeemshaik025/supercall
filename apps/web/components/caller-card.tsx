@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { usdShort } from '@/lib/format'
+import { sf, signedMoney, usdShort } from '@/lib/format'
 import type { Caller } from '@/lib/types'
 import { VerifiedBadge } from './ui'
 
@@ -32,7 +32,9 @@ export function LastTen({
                   : 'bg-white/20'
                 : o === 'W'
                   ? 'bg-good'
-                  : 'bg-bad/55'
+                  : o === 'L'
+                    ? 'bg-bad/55'
+                    : 'bg-line-strong'
             }
           />
         ))}
@@ -59,15 +61,14 @@ export function CallerCard({ caller }: { caller: Caller }) {
         </span>
       </div>
       <span className="flex items-baseline gap-2">
-        <span className="text-[52px] leading-none font-medium tracking-[-0.04em]">
-          {caller.superFactor}
+        <span className="min-w-0 truncate text-[52px] leading-none font-medium tracking-[-0.04em] tabular-nums">
+          {sf(caller.superFactor)}
         </span>
         <span className="text-[13px] text-white/85">SuperFactor</span>
       </span>
       <LastTen outcomes={caller.lastTen} onBrand />
       <span className="text-[13px] text-white/90">
-        Followers made {caller.followersNetUsd >= 0 ? '+' : ''}
-        {usdShort(caller.followersNetUsd)} · fund {usdShort(caller.poolUsd)}
+        Followers made {signedMoney(caller.followersNetUsd)} · fund {usdShort(caller.poolUsd)}
       </span>
       <Link
         href={`/u/${caller.handle}`}

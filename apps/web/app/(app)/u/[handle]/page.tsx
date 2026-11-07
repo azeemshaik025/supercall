@@ -4,7 +4,7 @@ import { LastTen } from '@/components/caller-card'
 import { FollowButton } from '@/components/follow-button'
 import { VerifiedBadge } from '@/components/ui'
 import { getCaller, getCallerCalls } from '@/lib/data'
-import { shortDate, usdShort } from '@/lib/format'
+import { moneyTone, sf, shortDate, signedMoney, usdShort } from '@/lib/format'
 import { callerCut } from '@/lib/money'
 
 const events = [
@@ -27,9 +27,9 @@ export default async function CallerPage({ params }: { params: Promise<{ handle:
     { k: 'Earned', v: usdShort(caller.earnedUsd) },
     {
       k: 'Followers made',
-      v: `${caller.followersNetUsd >= 0 ? '+' : ''}${usdShort(caller.followersNetUsd)}`,
+      v: signedMoney(caller.followersNetUsd),
       sub: `${caller.followersProfitablePct}% in profit`,
-      tone: caller.followersNetUsd >= 0 ? 'text-good' : 'text-bad',
+      tone: moneyTone(caller.followersNetUsd),
     },
     { k: 'Fund', v: usdShort(caller.poolUsd), sub: 'credit if a call goes wrong' },
   ]
@@ -70,7 +70,7 @@ export default async function CallerPage({ params }: { params: Promise<{ handle:
             <i className="font-semibold">Super</i>Factor
           </span>
           <span className="text-[72px] leading-[0.9] font-medium tracking-[-0.05em]">
-            {caller.superFactor}
+            {sf(caller.superFactor)}
           </span>
           <span className="text-[14px] text-white/90">
             Takes a {Math.round(callerCut(caller.superFactor) * 100)}% cut of kept fees.
