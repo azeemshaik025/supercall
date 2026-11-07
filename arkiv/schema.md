@@ -1,6 +1,6 @@
 # Arkiv schema
 
-Supercall's data lives in the Arkiv project `supercall` on the Rabdi testnet (chainId 5042).
+Supercall's data lives in the Arkiv project `supercall` on the Rabdi testnet (chainId 7794095).
 Five record types. Each record's JSON is the `payload` column. Every other column is an indexed
 attribute a query can filter on.
 
