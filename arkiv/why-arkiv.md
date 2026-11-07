@@ -1,23 +1,27 @@
 # Why Arkiv
 
-## If we swapped Arkiv for Postgres
+## The claim the product makes
 
-Supercall is a public record of trading calls. A caller posts a call. Later it wins or loses. The platform settles it and pays out.
+Supercall makes one claim: the call you see is the call that was made, and nobody edited it afterward.
 
-The product makes one claim: **the call you see is the call that was made, and nobody edited it afterwards.** A caller cannot move a stop loss after the fact. The platform cannot erase a loss to flatter a caller's record.
+A caller cannot move a stop loss after the fact. The platform cannot delete a loss to flatter a caller's record.
 
-Postgres cannot make that claim. Anyone with database access can update or delete rows. The user has to trust the operator's word that they didn't. On Arkiv, a call, its close and its settlement are owned by the burn address and marked read-only. No key exists to change them. The guarantee comes from where the data lives, not from a promise.
+## Why Postgres cannot make that claim
 
-Users read the data without us. Calls, caller histories and settlements are public Arkiv records. Anyone can query them with the SDK or JSON-RPC. If Supercall's servers go down, the record is still there and still queryable for as long as someone pays to extend it. On Postgres that history sits behind our API, gone if we turn it off.
+Anyone with database access can update or delete rows. The user must trust the operator's word. On Arkiv, a call, its close, and its settlement are owned by the burn address (`0x...dEaD`) and marked read-only. No key exists to change them. The guarantee comes from where the data lives, not from a promise.
 
-Each record has an owner and an expiry we choose. A call carries `permissionlessExtension`, so anyone can pay to keep it alive past its initial lifetime without editing it. A status that only matters while a call is open expires with it. That lifetime is a property of the data, not a cron job we run.
+## Public reads without the platform
 
-## What we keep off Arkiv, and why
+Calls, caller histories, and settlements are public Arkiv records. Anyone can query them with the SDK or JSON-RPC. If Supercall's servers go down, the record is still there and still queryable. On Postgres, that history sits behind our API. It disappears if we turn it off.
 
-The rule, from [packages/arkiv/AGENTS.md](../packages/arkiv/AGENTS.md):
+## Per-record lifetime control
+
+Each record has an owner and an expiry. A call carries `permissionlessExtension`. Anyone can pay to extend its life past Rabdi's 182-day cap without editing it. A status that only matters while a call is open expires with it. That lifetime is a property of the data, not a cron job.
+
+## What stays off Arkiv
+
+Rule from [packages/arkiv/AGENTS.md](../packages/arkiv/AGENTS.md):
 
 > If someone could be cheated by it, it's on Arkiv. If it only runs the machine, it's in Postgres.
 
-On Postgres (`@supercall/db`): session state, parser caches, rate-limit counters, worker bookkeeping. A user would never audit these and no one could be cheated by them. Putting them on Arkiv would cost a write and a lifetime for data nobody queries. The track does not count that.
-
-Private keys and the payment rails stay off Arkiv. They live on the chain and in the signer.
+Session state, parser caches, rate-limit counters, and worker bookkeeping stay in Postgres. A user would never audit these. No one could be cheated by them. Putting them on Arkiv would cost a write and a lifetime for data nobody queries.

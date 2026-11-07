@@ -4,7 +4,7 @@ What got in our way, what we expected, what happened, and how to reproduce it.
 
 ## Storage is capped, and the record should be permanent
 
-The core tension in our design. A trading call is history. It should be readable years later. Rabdi caps an entity's lifetime at 182 days (7,884,000 blocks). The one thing our product promises — "this call existed and nobody changed it" — is the one thing a single entity cannot do on its own.
+The core tension in our design. A trading call is history. It should be readable years later. Rabdi caps an entity's lifetime at 182 days (7,884,000 blocks). Our product promises "this call existed and nobody changed it." A single entity cannot guarantee that on its own.
 
 It got worse before it got better. We burn a call's ownership so nobody can delete or edit it. But a burned entity has no owner. Our first assumption was that no one could extend it either. Immutability and extendability pulled against each other on the same record.
 
@@ -25,7 +25,7 @@ Expected: reads against your own entities to be free or very cheap, so the index
 
 ## The public RPC is rate-limited hard
 
-The public Rabdi endpoint (`rpc.rabdi.db-chain.testnet.arkiv.network`) rate-limits hard enough that our test suite and seed script trip it under normal use. After a 429, the `Retry-After` header is set to minutes, not seconds. A single stuck read holds an API request for that long. We route reads through an API key header (`X-API-KEY`) to get usable throughput, and set `retryCount: 0` on the read transport to fail fast instead of waiting ([arkiv.ts](../packages/arkiv/src/arkiv.ts)).
+The public Rabdi endpoint (`rpc.rabdi.db-chain.testnet.arkiv.network`) rate-limits aggressively. Our test suite and seed script trip it under normal use. After a 429, the `Retry-After` header is set to minutes, not seconds. A single stuck read holds an API request for that long. We route reads through an API key header (`X-API-KEY`) to get usable throughput. We set `retryCount: 0` on the read transport to fail fast ([arkiv.ts](../packages/arkiv/src/arkiv.ts)).
 
 Expected: a public testnet endpoint usable for a demo's read volume.
 Reproduce: run the arkiv package's live tests against the public RPC with no key and watch them throttle.
@@ -57,6 +57,6 @@ Expected: a key-handling path that does not end up in error output.
 
 ## Expiry reads are block numbers, not timestamps
 
-The SDK's `ExpirationTime.atDate` handles the block conversion on writes. But when reading, `$expiresAt` comes back as a block height. "Expires in N days" means fetching the current block and doing the arithmetic every time. We cache the block number because reading it on Rabdi is not billed as a query. But the blocks-to-days conversion is friction every place expiry matters on the read side.
+The SDK's `ExpirationTime.atDate` handles the block conversion on writes. But when reading, `$expiresAt` comes back as a block height. "Expires in N days" means reading the current block and doing the arithmetic every time. We cache the block number because reading it on Rabdi is not billed as a query. But the blocks-to-days conversion is friction every place expiry matters on the read side.
 
 Expected: `$expiresAt` to return a timestamp, or the SDK to convert it.
