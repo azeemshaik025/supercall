@@ -20,7 +20,13 @@ export function createLoop(
     const from = BigInt(w.chain.hisaabBlock ?? 0)
     log({ event: 'round:rpc', step: 'getBlockNumber' })
     const to = await arc.getBlockNumber()
-    log({ event: 'round:rpc', step: 'registeredCalls', from: Number(from), to: Number(to), pages: Math.ceil(Number(to - from) / 10000) })
+    log({
+      event: 'round:rpc',
+      step: 'registeredCalls',
+      from: Number(from),
+      to: Number(to),
+      pages: Math.ceil(Number(to - from) / 10000),
+    })
     const calls = await registeredCalls(arc, w.chain.hisaab, from, to, log)
     if (!calls.length) return log({ event: 'round', calls: 0 })
 

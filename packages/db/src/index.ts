@@ -24,10 +24,12 @@ export function createDb(url = process.env.DATABASE_URL) {
 
 export type Db = ReturnType<typeof createDb>
 
-export const whileHolding = <T>(db: Db, lock: number, work: () => Promise<T>) =>
+export const whileHolding = (db: Db, lock: number, work: () => Promise<unknown>) =>
   db.transaction(async (tx) => {
     const [row] = await tx.execute(sql`select pg_try_advisory_xact_lock(${lock}) as free`)
-    return row?.free === true ? await work() : undefined
+    if (row?.free !== true) return false
+    await work()
+    return true
   })
 
 export const migrateDb = (db: Db) =>

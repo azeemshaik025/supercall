@@ -23,8 +23,8 @@ async function main() {
       const t0 = Date.now()
       console.log(JSON.stringify({ event: 'round:enter' }))
       try {
-        const result = await loop.round()
-        console.log(JSON.stringify({ event: 'round:done', ms: Date.now() - t0, skipped: result === undefined }))
+        const ran = await loop.round()
+        console.log(JSON.stringify({ event: 'round:done', ms: Date.now() - t0, skipped: !ran }))
       } catch (e) {
         console.error('round', (e as Error).message)
       }
@@ -37,8 +37,8 @@ async function main() {
       const t0 = Date.now()
       console.log(JSON.stringify({ event: 'tick:enter' }))
       try {
-        const result = await watch.tick()
-        console.log(JSON.stringify({ event: 'tick:done', ms: Date.now() - t0, skipped: result === undefined }))
+        const ran = await watch.tick()
+        console.log(JSON.stringify({ event: 'tick:done', ms: Date.now() - t0, skipped: !ran }))
       } catch (e) {
         console.error('tick', (e as Error).message)
       }
