@@ -76,7 +76,7 @@ export function useDeposit() {
       if (!w) throw new Error('Connect the wallet you deposit from')
 
       const chainId = SOURCE_CHAIN_IDS[chain]
-      if (chainId) await w.switchChain(chainId).catch(() => {})
+      if (chainId) await w.switchChain(chainId)
       const provider = await w.getEthereumProvider()
 
       onStep('quoting')

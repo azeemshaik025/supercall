@@ -5,6 +5,7 @@ import { createConfig, WagmiProvider } from '@privy-io/wagmi'
 import { viemChain } from '@supercall/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
+import { arbitrum, base, mainnet } from 'viem/chains'
 import { http } from 'wagmi'
 
 export const arc = viemChain()
@@ -18,7 +19,8 @@ const wagmiConfig = createConfig({
 const privyConfig: PrivyClientConfig = {
   loginMethods: ['wallet', 'email', 'twitter'],
   defaultChain: arc,
-  supportedChains: [arc],
+  // A deposit's approval is sent on its source chain, so the wallet must be able to switch there.
+  supportedChains: [arc, mainnet, base, arbitrum],
   appearance: { theme: 'dark', walletChainType: 'ethereum-only' },
   embeddedWallets: {
     ethereum: { createOnLogin: 'users-without-wallets' },
