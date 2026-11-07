@@ -1,7 +1,7 @@
 import { CallersTable } from '@/components/callers-table'
 import { PageTitle } from '@/components/ui'
-import { getCalls, getCallers } from '@/lib/data'
-import { usdShort } from '@/lib/format'
+import { getCallers, getCalls } from '@/lib/data'
+import { moneyTone, signedMoney, usdShort } from '@/lib/format'
 
 export default async function Callers() {
   const [callers, calls] = await Promise.all([getCallers(), getCalls()])
@@ -10,9 +10,9 @@ export default async function Callers() {
     { k: 'Callers', v: String(callers.length), sub: 'one verified human each' },
     {
       k: 'Followers made',
-      v: `+${usdShort(made)}`,
+      v: signedMoney(made),
       sub: 'after fees and credit',
-      tone: 'text-good',
+      tone: moneyTone(made),
     },
     {
       k: 'In their funds',

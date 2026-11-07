@@ -56,10 +56,15 @@ export const toCaller = (
     xHandle: c.x?.username ?? '',
     // A caller record exists only after a World ID proof.
     verified: true,
-    superFactor: superFactor({
-      S: fromMillionths(latest?.S.after ?? 0),
-      W: fromMillionths(latest?.W.after ?? 0),
-    }),
+    // Two decimals at most: the score moves in small steps, and more digits only overflow.
+    superFactor:
+      Math.round(
+        100 *
+          superFactor({
+            S: fromMillionths(latest?.S.after ?? 0),
+            W: fromMillionths(latest?.W.after ?? 0),
+          }),
+      ) / 100,
     lastTen: chain.slice(0, 10).map((s) => OUTCOME[s.ending.kind]),
     callCount,
     poolUsd: latest ? fromMicroUsdc(latest.fund.after.earned + latest.fund.after.creditOnly) : 0,

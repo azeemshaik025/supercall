@@ -63,11 +63,7 @@ function Row({ copy, now, wallet }: { copy: WalletCopy; now: number; wallet: str
       <Figure
         k="P&L"
         v={pnl === null ? '—' : signedUsd(pnl)}
-        sub={
-          pnl === null || !copy.fill
-            ? undefined
-            : `${pnl >= 0 ? '+' : '−'}${pct(Math.abs(pnl / copy.fill.spentUsd), 2)}`
-        }
+        sub={pnl === null || !copy.fill ? undefined : pct(pnl / copy.fill.spentUsd, 2)}
         tone={tone}
         info="Measured from your price on what the buy spent. The platform fee and Flash’s costs came out of your size first; your call fee is held in Hisaab and comes back if the call is wrong."
       />

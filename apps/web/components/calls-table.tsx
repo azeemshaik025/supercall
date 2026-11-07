@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { ENDED, OPEN, statusLabel } from '@/lib/data'
-import { ago, pct, price } from '@/lib/format'
+import { ago, pct, price, sf } from '@/lib/format'
 import { moveVsEntry } from '@/lib/money'
 import type { Call, Caller } from '@/lib/types'
 import { cx, Segmented, SideTag, TokenIcon } from './ui'
@@ -101,7 +101,7 @@ export function CallsTable({ calls, callers }: { calls: Call[]; callers: Caller[
                       {c.asset} <SideTag long={c.direction === 'long'} />
                     </span>
                     <span className="text-[12px] text-muted">
-                      @{c.caller} · SF {callerMap.get(c.caller)?.superFactor ?? 50}
+                      @{c.caller} · SF {sf(callerMap.get(c.caller)?.superFactor ?? 50)}
                     </span>
                   </span>
                 </span>
